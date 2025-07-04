@@ -1,0 +1,3 @@
+def register_user(username, password):
+    conn = sqlite3.connect("data/player_history.db")
+    ...
