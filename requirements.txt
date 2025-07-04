@@ -1,0 +1,6 @@
+streamlit
+streamlit-extras
+pandas
+scikit-learn
+joblib
+matplotlib
