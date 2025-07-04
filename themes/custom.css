@@ -1,0 +1,24 @@
+/* custom.css - PreHab theme */
+body {
+    background-color: #f7f9fc;
+    color: #1f2937;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+h1, h2, h3, h4 {
+    color: #0A4D68;
+}
+
+button {
+    background-color: #0A4D68;
+    color: white;
+    border-radius: 8px;
+}
+
+button:hover {
+    background-color: #145374;
+}
+
+.sidebar .sidebar-content {
+    background-color: #dce7f1;
+}
