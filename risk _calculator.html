@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PreHab: Team Analysis</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <style>
+        :root {
+            --bg-color: #0f172a; --text-color: #cbd5e1; --text-muted: #64748b; --primary-color: #818cf8; --primary-dark: #6366f1; --secondary-color: #2dd4bf; --card-bg: rgba(30, 41, 59, 0.5); --border-color: rgba(71, 85, 105, 0.3); --input-bg: #1e293b; --input-border: #334155; --shadow: 0 12px 35px rgba(0, 0, 0, 0.2); --risk-low: #4ade80; --risk-moderate: #facc15; --risk-high: #f87171; --risk-extreme: #c084fc;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 2rem; overflow-x: hidden; background-image: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0) 30%); }
+        .container { max-width: 1600px; margin: 0 auto; }
+        header { text-align: center; margin-bottom: 4rem; }
+        header h1 { font-size: 3.8rem; font-weight: 800; letter-spacing: -2.5px; margin-bottom: 0.5rem; display: flex; justify-content: center; align-items: center; gap: 1rem; }
+        header h1 .icon { font-size: 3.5rem; color: var(--primary-dark); opacity: 0; transform: scale(0.5); animation: iconPopIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.5s forwards; }
+        .word-wrapper { display: inline-block; overflow: hidden; vertical-align: bottom; }
+        .animated-text span { display: inline-block; transform: translateY(110%); animation: slideUpReveal 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        header .caption { font-size: 1.25rem; color: var(--text-muted); max-width: 650px; margin: 0 auto; opacity: 0; transform: translateY(20px); animation: textReveal 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s forwards; }
+        .main-layout { display: grid; grid-template-columns: 400px 1fr; gap: 2.5rem; align-items: flex-start; }
+        .controls { background: var(--card-bg); padding: 2rem; border-radius: 24px; box-shadow: var(--shadow); border: 1px solid var(--border-color); backdrop-filter: blur(20px); position: sticky; top: 2rem; overflow: hidden; }
+        .controls::before { content: ''; position: absolute; top: 0; left: 0; width: 150%; height: 150%; background: radial-gradient(circle at 30% 10%, var(--primary-dark) 0%, transparent 20%), radial-gradient(circle at 80% 90%, var(--secondary-color) 0%, transparent 25%); background-size: 50% 50%; background-repeat: no-repeat; opacity: 0.15; animation: aurora-flow 20s infinite linear; z-index: -1; }
+        .controls h2 { margin-top: 0; font-weight: 700; text-align: center; margin-bottom: 2rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        label { display: block; font-weight: 500; margin-bottom: 0.75rem; font-size: 0.9rem; color: #94a3b8; }
+        .parameters-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 1.5rem; align-items: flex-end; }
+        .file-label { display: flex; align-items: center; justify-content: center; gap: 10px; background: var(--input-bg); color: var(--primary-color); border: 2px dashed var(--input-border); transition: all 0.3s ease; padding: 1.5rem; border-radius: 12px; cursor: pointer; }
+        .file-label:hover, .file-label.is-dragging { background: #293548; border-color: var(--primary-color); }
+        input[type="file"] { display: none; }
+        #fileName { text-align: center; font-style: italic; color: var(--text-muted); font-size: 0.8rem; margin-top: 10px; }
+        .duration-input { display: flex; align-items: center; }
+        .duration-btn { background: var(--input-bg); border: 1px solid var(--input-border); color: var(--primary-color); width: 40px; height: 44px; font-size: 1.5rem; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; }
+        .duration-btn:hover { background: #293548; border-color: var(--primary-color); }
+        .duration-btn:first-child { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+        .duration-btn:last-child { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+        input[type="number"] { width: 100%; padding: 0.75rem 1rem; border-radius: 0; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text-color); border-left: none; border-right: none; font-size: 1rem; text-align: center; -moz-appearance: textfield; }
+        input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"]:focus { outline: none; }
+        .rpe-group { display: flex; align-items: center; gap: 1rem; }
+        #rpeValue { font-weight: 700; color: var(--primary-color); font-size: 1.2rem; transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); flex-shrink: 0; width: 45px; text-align: right; }
+        #rpeValue.popping { transform: scale(1.4); }
+        .slider-container { position: relative; flex-grow: 1; display: flex; align-items: center; }
+        input[type="range"] { -webkit-appearance: none; width: 100%; height: 8px; background: transparent; outline: none; transition: background .3s; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: var(--bg-color); border-radius: 50%; border: 3px solid var(--primary-color); cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.4); transition: transform 0.2s ease; position: relative; z-index: 2; }
+        input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.2); }
+        #rpe-fill-track { position: absolute; top: 50%; transform: translateY(-50%); left: 0; height: 8px; background: linear-gradient(90deg, var(--secondary-color), var(--risk-high)); border-radius: 4px; pointer-events: none; z-index: 1; }
+        .slider-container::before { content: ''; position: absolute; top: 50%; transform: translateY(-50%); left: 0; right: 0; height: 8px; background: var(--input-border); border-radius: 4px; }
+        #calculateBtn { position: relative; overflow: hidden; width: 100%; padding: 1rem; font-size: 1.1rem; font-weight: 600; background: var(--primary-dark); color: white; border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.2); }
+        #calculateBtn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3); background: #7173f5; }
+        #calculateBtn:disabled { background: #334155; color: var(--text-muted); cursor: not-allowed; box-shadow: none; transform: none; }
+        .ripple { position: absolute; border-radius: 50%; background: rgba(255, 255, 255, 0.5); transform: scale(0); animation: ripple 0.6s linear; }
+        .player-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; perspective: 2000px; }
+        .player-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px; padding: 1.5rem; box-shadow: var(--shadow); position: relative; overflow: hidden; opacity: 0; transform-style: preserve-3d; transition: transform 0.4s ease, box-shadow 0.4s ease; }
+        .player-card.is-visible { animation: popIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .player-card::before { content: ''; position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -50%); background: radial-gradient(circle, var(--glow-color) 0%, rgba(255,255,255,0) 50%); width: 400px; height: 400px; opacity: 0; transition: opacity 0.4s ease; pointer-events: none; }
+        .player-card:hover::before { opacity: 1; }
+        .player-card:hover { transform: translateY(-10px) rotateX(var(--rotate-x, 0)) rotateY(var(--rotate-y, 0)); box-shadow: 0 20px 40px rgba(0,0,0,0.2); border-color: var(--glow-border); }
+        .risk-low { --glow-color: rgba(74, 222, 128, 0.4); --glow-border: rgba(74, 222, 128, 0.6); } .risk-moderate { --glow-color: rgba(250, 204, 21, 0.4); --glow-border: rgba(250, 204, 21, 0.6); } .risk-high { --glow-color: rgba(248, 113, 113, 0.4); --glow-border: rgba(248, 113, 113, 0.6); } .risk-extreme { --glow-color: rgba(192, 132, 252, 0.4); --glow-border: rgba(192, 132, 252, 0.6); }
+        .risk-display .score { font-size: 3.5rem; font-weight: 800; line-height: 1; }
+        .results { min-height: 500px; } .message { background: var(--card-bg); padding: 4rem; border-radius: 20px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.5s ease-out .3s both; } .message h2 { font-size: 1.8rem; } .card-header { display: flex; align-items: center; gap: 15px; margin-bottom: 1rem; } .player-avatar { width: 50px; height: 50px; border-radius: 50%; color: var(--bg-color); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 600; flex-shrink: 0; } .player-info h3 { margin: 0; font-size: 1.2rem; font-weight: 600; color: #f1f5f9; } .player-info p { margin: 0; color: var(--text-muted); } .stats { height: 0; opacity: 0; overflow: hidden; transition: all 0.4s ease-in-out; display: grid; gap: 0.75rem; } .player-card:hover .stats { height: 100px; opacity: 1; margin-top: 1.5rem; } .stat { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; } .progress-bar { height: 6px; background-color: var(--input-border); border-radius: 3px; width: 50%; } .progress-bar-inner { height: 100%; border-radius: 3px; transition: width 1s ease-out .3s; } .risk-display { text-align: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--input-border); } .risk-display label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); } .risk-low .player-avatar, .risk-low .progress-bar-inner { background: var(--risk-low); } .risk-moderate .player-avatar, .risk-moderate .progress-bar-inner { background: var(--risk-moderate); } .risk-high .player-avatar, .risk-high .progress-bar-inner { background: var(--risk-high); } .risk-extreme .player-avatar, .risk-extreme .progress-bar-inner { background: var(--risk-extreme); } .risk-low .risk-display .score { color: var(--risk-low); } .risk-moderate .risk-display .score { color: var(--risk-moderate); } .risk-high .risk-display .score { color: var(--risk-high); } .risk-extreme .risk-display .score { color: var(--risk-extreme); } .skeleton-card { animation: shimmer 1.5s infinite linear; background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); background-size: 200% 100%; }
+        
+        /* Dropdown Styling */
+        .form-group { margin-bottom: 1.5rem; opacity: 0; animation: controlFadeIn 0.6s ease-out forwards; position: relative; z-index: 1; }
+        .form-group.select-open { z-index: 100; }
+        .custom-select-wrapper { position: relative; }
+        .custom-select-trigger { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid var(--input-border); background-color: var(--input-bg); font-size: 1rem; cursor: pointer; transition: all 0.3s ease; } 
+        .custom-select-trigger span { color: var(--text-color); }
+        .custom-select-trigger:hover { border-color: var(--primary-color); } 
+        .custom-options { position: absolute; top: 110%; left: 0; right: 0; background: var(--bg-color); border: 1px solid var(--input-border); border-radius: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); opacity: 0; visibility: hidden; transform: translateY(10px); transition: all 0.3s ease; backdrop-filter: blur(5px); max-height: 250px; overflow-y: auto; } 
+        .form-group.select-open .custom-options { opacity: 1; visibility: visible; transform: translateY(0); }
+        .custom-option { padding: 0.75rem 1rem; cursor: pointer; transition: background-color 0.2s ease; display: flex; align-items: center; gap: 10px; opacity: 0; transform: translateY(10px); animation: optionFadeIn 0.3s ease-out forwards; color: var(--text-color); } 
+        .custom-option:hover { background-color: var(--input-bg); } 
+        .custom-option i { color: var(--primary-color); }
+
+        /* Keyframes */
+        @keyframes slideUpReveal { to { transform: translateY(0); } }
+        @keyframes textReveal { to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes iconPopIn { to { opacity: 1; transform: scale(1); } }
+        @keyframes controlFadeIn { to { opacity: 1; } }
+        @keyframes optionFadeIn { to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn { from { opacity: 0; transform: translateY(30px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes ripple { to { transform: scale(4); opacity: 0; } }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        @keyframes aurora-flow { 0% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(20px, -20px) rotate(180deg); } 100% { transform: translate(0, 0) rotate(360deg); } }
+
+        /* Responsive */
+        @media (max-width: 1200px) { .main-layout { grid-template-columns: 1fr; } .controls { position: static; } }
+        @media (max-width: 768px) { .parameters-grid { grid-template-columns: 1fr; } header h1 { font-size: 2.8rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 class="animated-text">
+                <i class='bx bxs-shield-plus icon'></i>
+                PreHab Team Analysis
+            </h1>
+            <p class="caption">Uncover hidden risks and optimize team readiness with predictive load analysis.</p>
+        </header>
+
+        <div class="main-layout">
+            <aside class="controls">
+                <h2 style="animation-delay: 0.2s" class="form-group"><i class='bx bx-sider'></i> Session Parameters</h2>
+                
+                <div class="form-group" style="animation-delay: 0.3s">
+                    <label>1. Upload Team Roster</label>
+                    <label for="csvFileInput" class="file-label"><i class='bx bx-upload'></i> Select CSV File</label>
+                    <input type="file" id="csvFileInput" accept=".csv">
+                    <span id="fileName">No file selected.</span>
+                </div>
+                
+                <div class="form-group" style="animation-delay: 0.4s">
+                    <label>2. Select Training Type</label>
+                    <div class="custom-select-wrapper" id="trainingTypeSelectWrapper">
+                        <div class="custom-select-trigger" tabindex="0">
+                            <span id="selectedOption"></span><i class='bx bx-chevron-down'></i>
+                        </div>
+                        <div class="custom-options"></div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="animation-delay: 0.5s">
+                    <label>3. Select Position</label>
+                    <div class="custom-select-wrapper" id="positionSelectWrapper">
+                        <div class="custom-select-trigger" tabindex="0">
+                            <span id="selectedPosition"></span><i class='bx bx-chevron-down'></i>
+                        </div>
+                        <div class="custom-options"></div>
+                    </div>
+                </div>
+
+                <div class="parameters-grid">
+                    <div class="form-group" style="animation-delay: 0.6s">
+                        <label>4. Duration (min)</label>
+                        <div class="duration-input">
+                            <button class="duration-btn" id="decDuration">-</button>
+                            <input type="number" id="duration" value="60" min="1">
+                            <button class="duration-btn" id="incDuration">+</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="animation-delay: 0.7s">
+                        <label>5. RPE</label>
+                        <div class="rpe-group">
+                            <div class="slider-container">
+                                <div id="rpe-fill-track"></div>
+                                <input type="range" id="rpe" min="1" max="10" value="7" step="0.5">
+                            </div>
+                            <span id="rpeValue">7.0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="animation-delay: 0.8s">
+                    <button id="calculateBtn" disabled>Simulate Risk</button>
+                </div>
+            </aside>
+            <main class="results" id="resultsContainer">
+                <div class="message" id="welcomeMessage">
+                    <h2>Ready to Analyze</h2>
+                    <p>Upload your roster to begin the risk simulation.</p>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        function animateText(selector) {
+            const element = document.querySelector(selector);
+            if (!element || element.querySelector('.word-wrapper')) return;
+            const icon = element.querySelector('.icon');
+            if(icon) element.removeChild(icon);
+            const text = element.innerText.trim();
+            element.innerHTML = '';
+            if(icon) element.appendChild(icon);
+            text.split(' ').forEach((word, i) => {
+                const wordWrapper = document.createElement('div');
+                wordWrapper.className = 'word-wrapper';
+                const span = document.createElement('span');
+                span.innerText = word;
+                span.style.animationDelay = `${i * 0.08 + 0.1}s`;
+                wordWrapper.appendChild(span);
+                element.appendChild(wordWrapper);
+                element.appendChild(document.createTextNode(' '));
+            });
+        }
+        animateText('header h1.animated-text');
+
+        const fileLabel = document.querySelector('.file-label');
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            fileLabel.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); });
+        });
+        ['dragenter', 'dragover'].forEach(eventName => {
+            fileLabel.addEventListener(eventName, () => fileLabel.classList.add('is-dragging'));
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            fileLabel.addEventListener(eventName, () => fileLabel.classList.remove('is-dragging'));
+        });
+
+        const durationInput = document.getElementById('duration');
+        document.getElementById('incDuration').addEventListener('click', () => durationInput.stepUp());
+        document.getElementById('decDuration').addEventListener('click', () => durationInput.stepDown());
+
+        const rpeSlider = document.getElementById('rpe');
+        const rpeFillTrack = document.getElementById('rpe-fill-track');
+        const rpeValueEl = document.getElementById('rpeValue');
+        function updateRpeFill() {
+            const percentage = (rpeSlider.value - rpeSlider.min) / (rpeSlider.max - rpeSlider.min) * 100;
+            const thumbWidth = 22;
+            rpeFillTrack.style.width = `calc(${percentage}% - ${thumbWidth/2}px)`; 
+            rpeValueEl.textContent = parseFloat(rpeSlider.value).toFixed(1);
+            rpeValueEl.classList.add('popping');
+            setTimeout(() => rpeValueEl.classList.remove('popping'), 200);
+        }
+        rpeSlider.addEventListener('input', updateRpeFill);
+        updateRpeFill();
+        
+        const calcBtn = document.getElementById('calculateBtn');
+        calcBtn.addEventListener('click', function(e) {
+            if (this.disabled) return;
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const ripple = document.createElement('span');
+            ripple.className = 'ripple';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            this.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 600);
+        });
+        
+        function initCardFX() {
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach((entry, index) => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        entry.target.style.animationDelay = `${index * 50}ms`;
+                        animateCountUp(entry.target.querySelector('.score'));
+                        addGlowAndTilt(entry.target);
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+            document.querySelectorAll('.player-card').forEach(card => observer.observe(card));
+        }
+        
+        function addGlowAndTilt(card) {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.setProperty('--x', `${x}px`);
+                card.style.setProperty('--y', `${y}px`);
+                const { width, height } = rect;
+                const rotateX = (y / height - 0.5) * -12;
+                const rotateY = (x / width - 0.5) * 12;
+                card.style.setProperty('--rotate-x', `${rotateX}deg`);
+                card.style.setProperty('--rotate-y', `${rotateY}deg`);
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.setProperty('--rotate-x', `0deg`);
+                card.style.setProperty('--rotate-y', `0deg`);
+            });
+        }
+        
+        // --- Application State ---
+        const elements_full = {
+            fileInput: document.getElementById('csvFileInput'),
+            fileNameEl: document.getElementById('fileName'),
+            calculateBtn: document.getElementById('calculateBtn'),
+            resultsContainer: document.getElementById('resultsContainer'),
+            rpeEl: document.getElementById('rpe'),
+            durationEl: document.getElementById('duration'),
+            // Training Type Dropdown
+            trainingTypeSelectWrapper: document.getElementById('trainingTypeSelectWrapper'),
+            // Position Dropdown
+            positionSelectWrapper: document.getElementById('positionSelectWrapper'),
+        };
+        let teamData = [];
+        let selectedTrainingType = 'physical_power';
+        let selectedPosition = 'all'; // New state for position
+
+        const trainingTypes = { physical_power: { label: "Physical (Speed/Power)", icon: "bxs-zap", multiplier: 2.0 }, functional: { label: "Functional / Game Simulation", icon: "bxs-game", multiplier: 1.8 }, physical_endurance: { label: "Physical (Endurance/Strength)", icon: "bxs-battery-charging", multiplier: 1.6 }, goalkeeper: { label: "Goalkeeper Training", icon: "bxs-hand", multiplier: 1.5 }, technical: { label: "Technical (Dribbling/Passing)", icon: "bxs-ball", multiplier: 1.2 }, tactical: { label: "Tactical (Formations)", icon: "bxs-chess", multiplier: 0.7 }, recovery: { label: "Recovery Session", icon: "bxs-leaf", multiplier: 0.5 }, };
+        const positions = { all: { label: "Whole Team", icon: "bxs-group" }, Forward: { label: "Forwards", icon: "bxs-rocket" }, Midfielder: { label: "Midfielders", icon: "bxs-directions" }, Defender: { label: "Defenders", icon: "bxs-shield-alt-2" }, Goalkeeper: { label: "Goalkeepers", icon: "bxs-hand-up" } };
+
+        function init_full() {
+            populateCustomDropdown(elements_full.trainingTypeSelectWrapper, trainingTypes, 'selectedOption', (key) => { selectedTrainingType = key; });
+            populateCustomDropdown(elements_full.positionSelectWrapper, positions, 'selectedPosition', (key) => { selectedPosition = key; });
+            addEventListeners_full();
+        }
+        
+        function populateCustomDropdown(wrapper, options, selectedId, callback) {
+            const trigger = wrapper.querySelector('.custom-select-trigger');
+            const optionsEl = wrapper.querySelector('.custom-options');
+            const selectedEl = wrapper.querySelector('span');
+            optionsEl.innerHTML = '';
+            const initialKey = Object.keys(options)[0];
+
+            Object.entries(options).forEach(([key, value], index) => { 
+                const option = document.createElement('div'); 
+                option.className = 'custom-option'; 
+                option.dataset.value = key; 
+                option.innerHTML = `<i class='bx ${value.icon}'></i> ${value.label}`; 
+                option.style.animationDelay = `${index * 30}ms`; 
+                option.addEventListener('click', () => { 
+                    callback(key);
+                    selectedEl.innerHTML = `<i class='bx ${value.icon}'></i> ${value.label}`;
+                }); 
+                optionsEl.appendChild(option); 
+            }); 
+            selectedEl.innerHTML = `<i class='bx ${options[initialKey].icon}'></i> ${options[initialKey].label}`;
+        }
+
+        function addEventListeners_full() { 
+            elements_full.fileInput.addEventListener('change', handleFileSelect); 
+            fileLabel.addEventListener('drop', handleFileDrop); 
+            elements_full.calculateBtn.addEventListener('click', runSimulation); 
+            
+            document.querySelectorAll('.custom-select-trigger').forEach(trigger => {
+                trigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const currentFormGroup = e.currentTarget.closest('.form-group');
+                    // Close any other open dropdowns
+                    document.querySelectorAll('.form-group.select-open').forEach(openGroup => {
+                        if (openGroup !== currentFormGroup) {
+                            openGroup.classList.remove('select-open');
+                        }
+                    });
+                    currentFormGroup.classList.toggle('select-open');
+                });
+            });
+            
+            window.addEventListener('click', () => { 
+                const openSelect = document.querySelector('.form-group.select-open');
+                if (openSelect) {
+                    openSelect.classList.remove('select-open');
+                }
+            }); 
+        }
+
+        function handleFileDrop(event) { const file = event.dataTransfer.files[0]; if (file && (file.type === "text/csv" || file.name.endsWith('.csv'))) { processFile(file); } }
+        function handleFileSelect(event) { const file = event.target.files[0]; if (file) { processFile(file); } }
+        function processFile(file) { elements_full.fileNameEl.textContent = file.name; const reader = new FileReader(); reader.onload = e => { try { teamData = parseCSV(e.target.result); elements_full.calculateBtn.disabled = false; displayMessage(`Roster loaded with ${teamData.length} players. Ready to simulate.`); } catch (error) { displayError(error.message); elements_full.calculateBtn.disabled = true; } }; reader.readAsText(file); }
+        function parseCSV(text) { const lines = text.trim().split(/\r?\n/); if (lines.length < 2) throw new Error("CSV is empty or has only a header."); const headers = lines[0].split(',').map(h => h.trim()); const required = ['player_name', 'position', 'fatigue_level', 'sleep_quality', 'muscle_soreness']; required.forEach(h => { if (!headers.includes(h)) throw new Error(`CSV missing header: "${h}"`); }); return lines.slice(1).map(line => { const values = line.split(','); const player = {}; headers.forEach((h, i) => { const val = values[i] ? values[i].trim() : ''; player[h] = isNaN(val) || val === '' ? val : parseFloat(val); }); return player; }); }
+        
+        function runSimulation() { 
+            if (teamData.length === 0) return; 
+            
+            // Filter team data based on selected position
+            const filteredData = selectedPosition === 'all'
+                ? teamData 
+                : teamData.filter(player => player.position === selectedPosition);
+
+            if (filteredData.length === 0) {
+                displayMessage(`No players found for the position: <strong>${positions[selectedPosition].label}</strong>`);
+                return;
+            }
+
+            elements_full.calculateBtn.disabled = true; 
+            showSkeletonLoader(filteredData.length); 
+
+            setTimeout(() => { 
+                const duration = parseFloat(elements_full.durationEl.value) || 0; 
+                const rpe = parseFloat(elements_full.rpeEl.value); 
+                const multiplier = trainingTypes[selectedTrainingType].multiplier; 
+                const acuteLoad = duration * rpe * multiplier; 
+                
+                const resultsData = filteredData.map(player => { 
+                    const normFatigue = (player.fatigue_level || 0) / 10; 
+                    const normSleepDeficit = (10 - (player.sleep_quality || 10)) / 10; 
+                    const normSoreness = (player.muscle_soreness || 0) / 10; 
+                    const baselineRisk = (normFatigue + normSleepDeficit + normSoreness) / 3; 
+                    const normalizedAcuteLoad = Math.min(acuteLoad / 1200, 1.0); 
+                    const totalRiskScore = (0.5 * baselineRisk) + (0.5 * normalizedAcuteLoad); 
+                    return { ...player, totalRiskScore, riskLevel: assignRiskLevel(totalRiskScore) }; 
+                }).sort((a, b) => b.totalRiskScore - a.totalRiskScore); 
+                
+                displayPlayerCards(resultsData); 
+                elements_full.calculateBtn.disabled = false; 
+            }, 1200); 
+        }
+        
+        function assignRiskLevel(score) { if (score >= 0.75) return "Extreme"; if (score >= 0.60) return "High"; if (score >= 0.40) return "Moderate"; return "Low"; }
+        function displayPlayerCards(data) { elements_full.resultsContainer.innerHTML = '<div class="player-grid"></div>'; const grid = elements_full.resultsContainer.querySelector('.player-grid'); data.forEach((player) => { const card = createPlayerCard(player); grid.appendChild(card); }); initCardFX(); }
+        function createPlayerCard(player) { const card = document.createElement('div'); const riskClass = `risk-${player.riskLevel.toLowerCase()}`; const initials = player.player_name.split(' ').map(n => n[0]).join('').substring(0, 2); card.className = `player-card ${riskClass}`; card.innerHTML = `<div class="card-header"><div class="player-avatar">${initials}</div><div class="player-info"><h3>${player.player_name}</h3><p>${player.position}</p></div></div><div class="stats"><div class="stat"><span>Fatigue</span><div class="progress-bar"><div class="progress-bar-inner" style="width: 0%"></div></div><span>${player.fatigue_level}/10</span></div><div class="stat"><span>Sleep</span><div class="progress-bar"><div class="progress-bar-inner" style="width: 0%"></div></div><span>${player.sleep_quality}/10</span></div><div class="stat"><span>Soreness</span><div class="progress-bar"><div class="progress-bar-inner" style="width: 0%"></div></div><span>${player.muscle_soreness}/10</span></div></div><div class="risk-display"><div class="score" data-target="${(player.totalRiskScore * 100).toFixed(0)}">0</div><label>Risk Index</label></div>`; const progressBars = card.querySelectorAll('.progress-bar-inner'); setTimeout(() => { progressBars[0].style.width = `${player.fatigue_level * 10}%`; progressBars[1].style.width = `${player.sleep_quality * 10}%`; progressBars[2].style.width = `${player.muscle_soreness * 10}%`; }, 500); return card; }
+        function showSkeletonLoader(count) { elements_full.resultsContainer.innerHTML = '<div class="player-grid"></div>'; const grid = elements_full.resultsContainer.querySelector('.player-grid'); const cardCount = count > 0 ? count : 6; for(let i = 0; i < cardCount; i++) { const skeletonCard = document.createElement('div'); skeletonCard.className = 'player-card skeleton-card'; skeletonCard.style.animationDelay = `${i*100}ms`; grid.appendChild(skeletonCard); } }
+        function animateCountUp(el) { if(!el) return; const target = +el.dataset.target; let current = 0; const duration = 1000; const stepTime = 1000 / 60; let steps = duration / stepTime; let increment = target / steps; const updateCount = () => { current += increment; steps--; if (steps > 0) { el.innerText = Math.ceil(current); requestAnimationFrame(updateCount); } else { el.innerText = target; } }; requestAnimationFrame(updateCount); }
+        function displayMessage(msg) { elements_full.resultsContainer.innerHTML = `<div class="message"><h2>${msg}</h2></div>`; }
+        function displayError(msg) { elements_full.resultsContainer.innerHTML = `<div class="message" style="background-color: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4);"><h2 style="color: #f87171;">Error</h2><p style="color: var(--text-color);">${msg}</p></div>`; }
+        
+        init_full();
+    });
+    </script>
+</body>
+</html>

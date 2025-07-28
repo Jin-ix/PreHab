@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prehab - Football Injury Prevention & Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+
+    <style>
+        :root {
+            --pitch-dark: #0d1117;
+            --pitch-green: #23d387;
+            --pitch-green-glow: rgba(35, 211, 135, 0.4);
+            --line-white: #e6edf3;
+            --text-muted: #8b949e;
+            --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        body { font-family: 'Poppins', 'Inter', sans-serif; background-color: #010409; color: var(--line-white); }
+
+        /* === Effects & Transitions === */
+        .hero-section { position: relative; overflow: hidden; height: 100vh; background-color: #000; }
+        #video-background { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) translateZ(0); filter: brightness(0.7); }
+        .hero-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.8) 100%); z-index: 1; }
+        .hero-content { position: relative; z-index: 2; }
+        .animated-gradient-text { background: linear-gradient(90deg, #a5b4fc, #f9a8d4, #a5b4fc); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: text-gradient-flow 4s linear infinite; }
+        @keyframes text-gradient-flow { 0% { background-position: 200% center; } 100% { background-position: 0% center; } }
+        
+        .pulse-glow-btn { animation: pulse-glow 2s infinite ease-in-out; will-change: transform, box-shadow; }
+        @keyframes pulse-glow { 50% { transform: scale(1.05); box-shadow: 0 0 30px rgba(99, 102, 241, 0.6), 0 0 45px rgba(168, 85, 247, 0.4); } }
+        
+        #navbar.scrolled { background-color: rgba(1, 4, 9, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.8s var(--ease-out-quint), transform 0.6s var(--ease-out-quint); will-change: transform, opacity; }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+        .glass-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease; will-change: transform, background, box-shadow; }
+        .dark .glass-card { background: rgba(30, 41, 59, 0.2); border-color: rgba(71, 85, 105, 0.5); }
+        .glass-card:hover { transform: translateY(-10px); background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); box-shadow: 0 20px 30px rgba(0, 0, 0, 0.2), 0 0 40px rgba(99, 102, 241, 0.3); }
+
+        /* === MODAL & NEW FORM STYLES === */
+        .modal-backdrop { opacity: 0; visibility: hidden; transition: opacity 0.4s var(--ease-out-quint), visibility 0.4s var(--ease-out-quint); background-color: rgba(1, 4, 9, 0.5); backdrop-filter: blur(10px); position: fixed; inset: 0; z-index: 50; display: flex; justify-content: center; align-items: center; padding: 1rem; }
+        .modal-backdrop.visible { opacity: 1; visibility: visible; }
+        .modal-container { display: flex; width: 100%; max-width: 56rem; background: var(--pitch-dark); border: 1px solid #222; border-radius: 1rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 30px var(--pitch-green-glow); transform: scale(0.95); opacity: 0; transition: all 0.4s var(--ease-out-quint); will-change: transform, opacity; }
+        .modal-backdrop.visible .modal-container { transform: scale(1); opacity: 1; }
+        
+        .modal-visual { width: 45%; padding: 3rem; color: white; position: relative; overflow: hidden; display: none; }
+        @media (min-width: 768px) { .modal-visual { display: flex; flex-direction: column; justify-content: flex-end; } }
+        .modal-visual-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(0.6); transform: scale(1.1); transition: transform 0.8s var(--ease-out-quint); }
+        .modal-backdrop.visible .modal-visual-bg { transform: scale(1); }
+        
+        .form-panel { width: 100%; padding: 2rem; @media (min-width: 768px) { width: 55%; padding: 3rem; } }
+        .form-field { opacity: 0; transform: translateY(15px); animation: form-field-fade-in 0.5s var(--ease-out-quint) forwards; }
+        @keyframes form-field-fade-in { to { opacity: 1; transform: translateY(0); } }
+
+        .form-title { font-size: 2.25rem; font-weight: 800; color: var(--line-white); }
+        .form-subtitle { color: var(--text-muted); margin-bottom: 2rem; }
+        
+        .floating-input { position: relative; background: #010409; border: 1px solid #30363d; border-radius: 0.5rem; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        .floating-input:focus-within { border-color: var(--pitch-green); box-shadow: 0 0 0 3px var(--pitch-green-glow); }
+        .floating-input input { font-family: 'Inter', sans-serif; background: none; outline: none; width: 100%; padding: 1.25rem 1rem 0.35rem; color: var(--line-white); }
+        .floating-input label { position: absolute; top: 0.8rem; left: 1rem; color: var(--text-muted); transition: all 0.2s ease; pointer-events: none; }
+        .floating-input input:focus + label, .floating-input input:not(:placeholder-shown) + label { top: 0.1rem; font-size: 0.8rem; color: var(--pitch-green); }
+        
+        .form-button { position: relative; overflow: hidden; background-color: var(--pitch-green); color: #010409; font-weight: 700; padding: 0.8rem 1.5rem; border-radius: 0.5rem; transition: all 0.2s ease; transform: scale(1); box-shadow: 0 0 20px var(--pitch-green-glow); }
+        .form-button:hover:not(:disabled) { transform: scale(1.05); filter: brightness(1.1); }
+        .form-button:active:not(:disabled) { transform: scale(0.98); }
+        .form-button:disabled { background-color: #374151; color: #9ca3af; cursor: not-allowed; box-shadow: none; }
+        
+        .ripple { position: absolute; border-radius: 50%; background: rgba(255, 255, 255, 0.3); transform: scale(0); animation: ripple-animation 0.6s linear; }
+        @keyframes ripple-animation { to { transform: scale(4); opacity: 0; } }
+
+        .loader { width: 18px; height: 18px; border: 2px solid #FFF; border-bottom-color: transparent; border-radius: 50%; display: inline-block; box-sizing: border-box; animation: rotation 1s linear infinite; }
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        #password-strength-container { transition: max-height 0.4s var(--ease-out-quint), opacity 0.4s var(--ease-out-quint); max-height: 0; opacity: 0; overflow: hidden; }
+        #password-strength-container.visible { max-height: 100px; opacity: 1; }
+        .strength-segment { background-color: #374151; transition: background-color 0.3s ease-in-out; }
+    </style>
+</head>
+<body class="bg-slate-950">
+
+    <div id="landing-page-container">
+        <nav id="navbar" class="fixed w-full z-40 transition-all duration-300"><div class="container mx-auto px-6 py-4 flex justify-between items-center"><a href="#" class="text-2xl font-black text-white tracking-wide">Prehab</a><div class="flex items-center space-x-4 md:space-x-6"><div id="auth-links" class="flex items-center space-x-4 md:space-x-6"><button id="registerBtn" class="font-semibold text-white/80 hover:text-white transition duration-300">Register</button><button id="loginBtn" class="ripple-effect bg-indigo-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-indigo-500 transition-all duration-300 transform hover:scale-105">Login</button></div><div id="user-links" class="hidden items-center space-x-4"><span id="userEmail" class="text-gray-200 font-medium"></span><button id="logoutBtn" class="ripple-effect bg-red-500 text-white font-semibold px-4 py-2 rounded-lg hover:bg-red-600 transition duration-300">Logout</button></div></div></div></nav>
+        <header class="hero-section text-white flex items-center justify-center"><div id="video-background-container"><video id="video-background" src="playbackvideo.mp4" autoplay loop muted playsinline></video></div><div class="hero-overlay"></div><div class="hero-content text-center px-6"><h1 class="text-5xl md:text-8xl font-black mb-6 leading-tight animated-gradient-text">Keep Players on the Field</h1><p class="max-w-2xl mx-auto text-lg md:text-xl text-slate-300 mb-10">The future of football analytics is here. Prevent injuries before they happen with our AI-powered platform.</p><a href="#features" id="discoverBtn" class="pulse-glow-btn bg-indigo-600 text-white font-bold py-4 px-10 rounded-full hover:bg-indigo-500 transition-all duration-300 text-lg inline-block ripple-effect">Discover Features</a></div></header>
+    </div>
+    
+    <div id="modal-placeholder">
+        <div id="loginModal" class="hidden modal-backdrop">
+            <div class="modal-container">
+                <div class="modal-visual">
+                    <img src="https://rpydbsieucfjlybopnpi.supabase.co/storage/v1/object/public/assets/Manchester%20City.jpg" alt="Goalkeeper" class="modal-visual-bg">
+                    <div class="relative z-10">
+                        <h3 class="text-4xl font-black mb-2">Welcome Back.</h3>
+                        <p class="text-slate-300 text-lg font-light">Your squad is waiting.</p>
+                    </div>
+                </div>
+                <div class="form-panel">
+                    <button class="close-modal-btn absolute top-4 right-6 text-2xl font-light text-gray-500 hover:text-white transition-colors">&times;</button>
+                    <h2 class="form-title">Player Sign In</h2>
+                    <p class="form-subtitle">Enter your credentials to access the pitch.</p>
+                    <form id="loginForm" class="space-y-6">
+                        <div class="form-field floating-input" style="animation-delay: 100ms;"><input type="email" id="loginEmail" placeholder=" " required /><label for="loginEmail">Email Address</label></div>
+                        <div class="form-field floating-input" style="animation-delay: 200ms;"><input type="password" id="loginPassword" placeholder=" " required /><label for="loginPassword">Password</label></div>
+                        <div class="form-field" style="animation-delay: 300ms;"><button type="submit" class="w-full form-button ripple-effect"><span>Kick Off</span></button></div>
+                    </form>
+                    <p id="loginError" class="form-message text-red-400 text-sm mt-4 text-center"></p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="registerModal" class="hidden modal-backdrop">
+            <div class="modal-container">
+                <div class="modal-visual">
+                    <img src="https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=2970&auto=format&fit=crop" alt="Football stadium" class="modal-visual-bg">
+                    <div class="relative z-10">
+                        <h3 class="text-4xl font-black mb-2">Join the Squad.</h3>
+                        <p class="text-slate-300 text-lg font-light">Create your coach profile to get started.</p>
+                    </div>
+                </div>
+                <div class="form-panel"><button class="close-modal-btn absolute top-4 right-6 text-2xl font-light text-gray-500 hover:text-white transition-colors">&times;</button><div id="register-content"><h2 class="form-title">New Player Registration</h2><p class="form-subtitle">Fill out your details to join the team.</p><form id="registerForm" class="space-y-5"><div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5"><div class="form-field floating-input" style="animation-delay: 100ms;"><input type="text" id="registerName" placeholder=" " required /><label for="registerName">Full Name</label></div><div class="form-field floating-input" style="animation-delay: 200ms;"><input type="text" id="registerClub" placeholder=" " required /><label for="registerClub">Club Name</label></div><div class="form-field floating-input sm:col-span-2" style="animation-delay: 300ms;"><input type="email" id="registerEmail" placeholder=" " required /><label for="registerEmail">Email Address</label></div><div class="form-field floating-input sm:col-span-2" style="animation-delay: 400ms;"><input type="password" id="registerPassword" placeholder=" " required /><label for="registerPassword">Password</label></div></div><div id="password-strength-container" class="form-field" style="animation-delay: 450ms;"><div id="password-strength-meter" class="flex gap-x-2"><div class="strength-segment h-1.5 rounded-full w-full"></div><div class="strength-segment h-1.5 rounded-full w-full"></div><div class="strength-segment h-1.5 rounded-full w-full"></div></div><p id="password-strength-text" class="text-xs text-right font-medium"></p></div><div class="form-field" style="animation-delay: 500ms;"><button type="submit" id="registerSubmitBtn" class="w-full form-button ripple-effect" disabled><span>Create Account</span></button></div></form><p id="registerError" class="form-message text-red-400 text-sm mt-4 text-center"></p></div><div id="success-message" class="hidden text-center py-12"><h2 class="text-3xl font-bold text-green-400 mb-4">Registration Complete!</h2><p class="text-gray-300 text-lg">A confirmation link has been sent to <b id="user-registered-email"></b>. Please verify your email to continue.</p></div></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        const { createClient } = supabase;
+        const SUPABASE_URL = 'https://rpydbsieucfjlybopnpi.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJweWRic2lldWNmamx5Ym9wbnBpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3MTY1MzEsImV4cCI6MjA2OTI5MjUzMX0.kqO9v-N9oeLOi7ad8IkBEwSe_e-zjX1c_EvyF7xHNtY';
+        let supabaseClient;
+        if (SUPABASE_URL && SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+            supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+
+        function showModal(modal) {
+            if (!modal) return;
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => modal.classList.add('visible'));
+            document.body.style.overflow = 'hidden';
+        }
+        function hideModal(modal) {
+            if (!modal) return;
+            modal.classList.remove('visible');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }, 300);
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginBtn = document.getElementById('loginBtn');
+            const registerBtn = document.getElementById('registerBtn');
+            const loginModal = document.getElementById('loginModal');
+            const registerModal = document.getElementById('registerModal');
+            const registerForm = document.getElementById('registerForm');
+            const loginForm = document.getElementById('loginForm');
+            const registerSubmitBtn = document.getElementById('registerSubmitBtn');
+            
+            let isPasswordStrong = false;
+
+            if (supabaseClient) {
+                // REGISTRATION
+                registerForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    if (!isPasswordStrong) {
+                        const errorEl = document.getElementById('registerError');
+                        errorEl.textContent = "Password must be 'Strong' or 'Very Strong' to register.";
+                        errorEl.classList.add('visible');
+                        return;
+                    }
+                    
+                    const submitBtnSpan = registerSubmitBtn.querySelector('span');
+                    const originalBtnText = submitBtnSpan.textContent;
+                    submitBtnSpan.innerHTML = '<div class="loader mx-auto"></div>';
+                    registerSubmitBtn.disabled = true;
+
+                    const name = document.getElementById('registerName').value;
+                    const club = document.getElementById('registerClub').value;
+                    const email = document.getElementById('registerEmail').value;
+                    const password = document.getElementById('registerPassword').value;
+                    const errorEl = document.getElementById('registerError');
+                    errorEl.textContent = '';
+                    errorEl.classList.remove('visible');
+
+                    const { error } = await supabaseClient.auth.signUp({
+                        email: email,
+                        password: password,
+                        options: { data: { full_name: name, club_name: club } }
+                    });
+                    
+                    if (error) {
+                        errorEl.textContent = error.message;
+                        errorEl.classList.add('visible');
+                    } else {
+                        document.getElementById('register-content').classList.add('hidden');
+                        document.getElementById('user-registered-email').textContent = email;
+                        document.getElementById('success-message').classList.remove('hidden');
+                    }
+                    
+                    submitBtnSpan.textContent = originalBtnText;
+                     if (error) {
+                       registerSubmitBtn.disabled = false;
+                     }
+                });
+                
+                // LOGIN
+                loginForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const email = document.getElementById('loginEmail').value;
+                    const password = document.getElementById('loginPassword').value;
+                    const errorEl = document.getElementById('loginError');
+                    errorEl.textContent = '';
+                    errorEl.classList.remove('visible');
+
+                    const { data, error: signInError } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+                    if (signInError) {
+                        errorEl.textContent = "Invalid credentials or email not confirmed.";
+                        errorEl.classList.add('visible');
+                        return;
+                    }
+
+                    if (data.user) {
+                        const { data: profile, error: profileError } = await supabaseClient.from('coaches').select('id').eq('id', data.user.id).single();
+                        if (profileError || !profile) {
+                            errorEl.textContent = "Login failed: Your coach profile was not found. Please try again in a moment.";
+                            errorEl.classList.add('visible');
+                            await supabaseClient.auth.signOut();
+                        } else {
+                            window.location.href = './landing_page.html';
+                        }
+                    }
+                });
+                
+                document.getElementById('logoutBtn').addEventListener('click', () => supabaseClient.auth.signOut());
+                supabaseClient.auth.onAuthStateChange((event, session) => { /* ... unchanged ... */ });
+            }
+
+            // --- UI & EVENT LISTENERS ---
+            loginBtn.addEventListener('click', () => showModal(loginModal));
+            registerBtn.addEventListener('click', () => {
+                registerForm.reset();
+                document.getElementById('registerError').textContent = '';
+                document.getElementById('register-content').classList.remove('hidden');
+                document.getElementById('success-message').classList.add('hidden');
+                document.getElementById('password-strength-container').classList.remove('visible');
+                registerSubmitBtn.disabled = true;
+                showModal(registerModal);
+            });
+            
+            document.querySelectorAll('.close-modal-btn').forEach(btn => btn.addEventListener('click', () => {
+                hideModal(loginModal);
+                hideModal(registerModal);
+            }));
+
+            // --- DYNAMIC PASSWORD METER ---
+            const passwordInput = document.getElementById('registerPassword');
+            const strengthContainer = document.getElementById('password-strength-container');
+            const strengthSegments = document.querySelectorAll('#password-strength-meter .strength-segment');
+            const strengthText = document.getElementById('password-strength-text');
+            
+            passwordInput.addEventListener('input', () => {
+                const password = passwordInput.value;
+                if (password.length > 0) {
+                    strengthContainer.classList.add('visible');
+                } else {
+                    strengthContainer.classList.remove('visible');
+                }
+                let score = 0;
+                if (password.length >= 8) score++; if (password.length >= 12) score++; if (/[A-Z]/.test(password)) score++; if (/[a-z]/.test(password)) score++; if (/[0-9]/.test(password)) score++; if (/[^A-Za-z0-9]/.test(password)) score++;
+                
+                const strengthLevels = { 0: { text: "", colors: [] }, 1: { text: "Weak", colors: ['bg-red-500'] }, 2: { text: "Weak", colors: ['bg-red-500', 'bg-red-500'] }, 3: { text: "Medium", colors: ['bg-yellow-500', 'bg-yellow-500'] }, 4: { text: "Medium", colors: ['bg-yellow-500', 'bg-yellow-500', 'bg-yellow-500'] }, 5: { text: "Strong", colors: ['bg-green-500', 'bg-green-500', 'bg-green-500'] }, 6: { text: "Very Strong", colors: ['bg-green-500', 'bg-green-500', 'bg-green-500'] } };
+                
+                const currentStrength = strengthLevels[score] || strengthLevels[6];
+                isPasswordStrong = score >= 5;
+                registerSubmitBtn.disabled = !isPasswordStrong;
+
+                strengthSegments.forEach((segment, index) => {
+                    const color = currentStrength.colors[index] || 'dark:bg-slate-700 bg-slate-200';
+                    segment.className = `strength-segment h-1.5 rounded-full w-full ${color}`;
+                });
+                const textColor = (currentStrength.colors[0] || '').replace('bg-', 'text-');
+                strengthText.textContent = currentStrength.text;
+                strengthText.className = `text-xs text-right font-medium transition-colors duration-300 ${textColor}`;
+            });
+
+            // --- RIPPLE EFFECT ---
+            document.querySelectorAll('.ripple-effect').forEach(button => {
+                button.addEventListener('click', function (e) {
+                    const rect = this.getBoundingClientRect();
+                    const ripple = document.createElement('span');
+                    ripple.className = 'ripple';
+                    ripple.style.left = `${e.clientX - rect.left}px`;
+                    ripple.style.top = `${e.clientY - rect.top}px`;
+                    this.appendChild(ripple);
+                    setTimeout(() => ripple.remove(), 600);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Injury Risk Analysis - Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* slate-900 */
+            color: #cbd5e1; /* slate-300 */
+        }
+        .card {
+            background-color: #1e293b; /* slate-800 */
+            border-radius: 1rem;
+            border: 1px solid #334155; /* slate-700 */
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.1);
+        }
+        .input-style {
+            background-color: #334155; /* slate-700 */
+            border: 1px solid #475569; /* slate-600 */
+            color: #e2e8f0; /* slate-200 */
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            transition: all 0.2s ease;
+        }
+        .input-style:focus {
+            outline: none;
+            border-color: #818cf8; /* indigo-400 */
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+        }
+        .btn-primary {
+            background-image: linear-gradient(to right, #6366f1, #a855f7);
+            color: white;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            border-radius: 0.5rem;
+            padding: 0.9rem 1rem;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+        }
+        .btn-primary.loading .btn-text { color: transparent; }
+        .btn-primary.loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            margin: auto;
+            border: 3px solid transparent;
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: button-loading-spinner 1s ease infinite;
+        }
+        @keyframes button-loading-spinner { from { transform: rotate(0turn); } to { transform: rotate(1turn); } }
+        
+        input[type="range"] { -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer; width: 100%; }
+        input[type="range"]::-webkit-slider-runnable-track {
+            background: #475569;
+            border-radius: 0.5rem;
+            height: 0.5rem;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            margin-top: -6px;
+            background-color: #818cf8;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            border: 2px solid #1e293b;
+            transition: background-color 0.2s ease;
+        }
+        input[type="range"]:hover::-webkit-slider-thumb { background-color: #a78bfa; }
+
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+        @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+        
+        .pop-in { animation: popIn 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
+        @keyframes popIn { 0% { opacity: 0; transform: scale(0.5); } 100% { opacity: 1; transform: scale(1); } }
+
+        .value-pop { animation: valuePop 0.3s ease; }
+        @keyframes valuePop { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+            <!-- Left Panel: Input -->
+            <div class="lg:col-span-4">
+                 <div class="card p-6 sticky top-8">
+                    <h1 class="text-3xl font-extrabold text-white mb-1">Risk Profiler</h1>
+                    <p class="text-slate-400 mb-6">Enter live metrics to assess acute injury risk.</p>
+
+                    <div class="space-y-5">
+                        <div>
+                            <label for="playerName" class="block text-sm font-medium text-slate-400 mb-1">Player Name</label>
+                            <input type="text" id="playerName" placeholder="e.g., Alex Morgan" class="w-full input-style">
+                        </div>
+                        <div>
+                            <label for="position" class="block text-sm font-medium text-slate-400 mb-1">Position</label>
+                            <select id="position" class="w-full input-style">
+                                <option>Midfielder</option>
+                                <option>Forward</option>
+                                <option>Defender</option>
+                                <option>Goalkeeper</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="notes" class="block text-sm font-medium text-slate-400 mb-1">Session Notes (Optional)</label>
+                            <textarea id="notes" rows="3" class="w-full input-style" placeholder="e.g., felt tightness in hamstring..."></textarea>
+                        </div>
+                        <!-- Sliders -->
+                        <div class="space-y-4 pt-2">
+                            <div class="slider-container">
+                                <div class="flex justify-between items-center mb-1">
+                                    <label class="text-sm font-medium text-slate-400">Resting Heart Rate</label>
+                                    <span id="heartRateValue" class="text-sm font-semibold text-indigo-300 transition-transform duration-300">60 BPM</span>
+                                </div>
+                                <input type="range" id="heartRate" min="40" max="120" value="60">
+                            </div>
+                            <div class="slider-container">
+                                <div class="flex justify-between items-center mb-1">
+                                    <label class="text-sm font-medium text-slate-400">Fatigue Level</label>
+                                    <span id="fatigueLevelValue" class="text-sm font-semibold text-indigo-300 transition-transform duration-300">3 / 10</span>
+                                </div>
+                                <input type="range" id="fatigueLevel" min="0" max="10" value="3">
+                            </div>
+                            <div class="slider-container">
+                                <div class="flex justify-between items-center mb-1">
+                                    <label class="text-sm font-medium text-slate-400">Recent Training Load</label>
+                                    <span id="accelerationLoadValue" class="text-sm font-semibold text-indigo-300 transition-transform duration-300">40</span>
+                                </div>
+                                <input type="range" id="accelerationLoad" min="0" max="100" value="40">
+                            </div>
+                            <div class="slider-container">
+                                <div class="flex justify-between items-center mb-1">
+                                    <label class="text-sm font-medium text-slate-400">Sleep Quality</label>
+                                    <span id="sleepQualityValue" class="text-sm font-semibold text-indigo-300 transition-transform duration-300">8 / 10</span>
+                                </div>
+                                <input type="range" id="sleepQuality" min="0" max="10" value="8">
+                            </div>
+                        </div>
+                    </div>
+                    <button id="analyzeButton" class="w-full btn-primary mt-8">
+                        <span class="btn-text">Analyze Risk</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Panel: Output -->
+            <div id="resultsPanel" class="lg:col-span-8">
+                 <div id="initialMessage" class="h-full flex items-center justify-center fade-in-up">
+                    <div class="text-center text-slate-500 p-10">
+                        <svg class="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <h3 class="mt-4 text-lg font-medium text-slate-400">Awaiting Analysis</h3>
+                        <p class="mt-1 text-sm">Input player data to generate a risk report.</p>
+                    </div>
+                </div>
+                 <div id="analysisResult" class="hidden space-y-6">
+                     <div class="report-card flex justify-between items-start">
+                        <div>
+                            <h2 id="reportPlayerName" class="text-4xl font-extrabold text-white"></h2>
+                            <p class="text-slate-400">Acute Injury Risk Report</p>
+                        </div>
+                        <button id="downloadButton" class="bg-slate-700 text-slate-300 font-semibold py-2 px-5 rounded-lg hover:bg-slate-600 transition">
+                            Download Report
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="report-card card p-6 md:col-span-1 flex flex-col items-center justify-center text-center">
+                            <h3 class="text-base font-semibold text-slate-400 mb-3">Overall Risk</h3>
+                            <div id="riskLevel" class="text-4xl font-bold px-8 py-3 rounded-full"></div>
+                        </div>
+                        <div class="report-card card p-6 md:col-span-2">
+                             <h3 class="text-base font-semibold text-slate-400 mb-4 text-center">Risk Contribution</h3>
+                             <canvas id="metricsChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="report-card card p-6">
+                        <h3 class="text-xl font-bold text-white mb-3">Key Risk Factors</h3>
+                        <ul id="riskFactors" class="list-disc list-inside space-y-2 text-slate-400"></ul>
+                    </div>
+                    
+                    <div class="report-card card p-6 bg-gradient-to-br from-indigo-900 via-slate-800 to-slate-800">
+                        <h3 class="text-xl font-bold text-white mb-3">Coach's Corner</h3>
+                        <p id="coachSuggestions" class="text-indigo-200 leading-relaxed"></p>
+                    </div>
+
+                    <div class="report-card card p-6">
+                        <h3 class="text-xl font-bold text-white mb-3">Player Recommendations</h3>
+                        <p id="recommendations" class="text-slate-400 leading-relaxed"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Elements & State ---
+        const ui = {
+            heartRate: { slider: document.getElementById('heartRate'), value: document.getElementById('heartRateValue') },
+            fatigue: { slider: document.getElementById('fatigueLevel'), value: document.getElementById('fatigueLevelValue') },
+            load: { slider: document.getElementById('accelerationLoad'), value: document.getElementById('accelerationLoadValue') },
+            sleep: { slider: document.getElementById('sleepQuality'), value: document.getElementById('sleepQualityValue') },
+            analyzeButton: document.getElementById('analyzeButton'),
+            analysisResult: document.getElementById('analysisResult'),
+            initialMessage: document.getElementById('initialMessage'),
+            report: {
+                name: document.getElementById('reportPlayerName'),
+                riskLevel: document.getElementById('riskLevel'),
+                factors: document.getElementById('riskFactors'),
+                recommendations: document.getElementById('recommendations'),
+                coach: document.getElementById('coachSuggestions'),
+                downloadBtn: document.getElementById('downloadButton')
+            }
+        };
+
+        let lastAnalysisData = {};
+        let charts = {};
+
+        // --- Event Listeners ---
+        function setupSliderListener(sliderElement, valueElement, formatter) {
+            // Set initial background
+            const initialPercent = (sliderElement.value - sliderElement.min) / (sliderElement.max - sliderElement.min) * 100;
+            sliderElement.style.background = `linear-gradient(to right, #818cf8 ${initialPercent}%, #475569 ${initialPercent}%)`;
+
+            sliderElement.addEventListener('input', (e) => {
+                const value = e.target.value;
+                valueElement.textContent = formatter(value);
+                valueElement.classList.add('value-pop');
+                // update slider track background
+                const percent = (value - e.target.min) / (e.target.max - e.target.min) * 100;
+                e.target.style.background = `linear-gradient(to right, #818cf8 ${percent}%, #475569 ${percent}%)`;
+            });
+            valueElement.addEventListener('animationend', () => {
+                valueElement.classList.remove('value-pop');
+            });
+        }
+
+        setupSliderListener(ui.heartRate.slider, ui.heartRate.value, v => `${v} BPM`);
+        setupSliderListener(ui.fatigue.slider, ui.fatigue.value, v => `${v} / 10`);
+        setupSliderListener(ui.load.slider, ui.load.value, v => v);
+        setupSliderListener(ui.sleep.slider, ui.sleep.value, v => `${v} / 10`);
+
+        ui.analyzeButton.addEventListener('click', runAnalysis);
+        ui.report.downloadBtn.addEventListener('click', generatePdf);
+
+        // --- Main Analysis Logic ---
+        function runAnalysis() {
+            ui.analyzeButton.disabled = true;
+            ui.analyzeButton.classList.add('loading');
+            
+            setTimeout(() => {
+                // 1. Get Input Values
+                const playerName = document.getElementById('playerName').value || 'Unnamed Player';
+                const notes = document.getElementById('notes').value;
+                const hr = parseInt(ui.heartRate.slider.value);
+                const fatigue = parseInt(ui.fatigue.slider.value);
+                const accel = parseInt(ui.load.slider.value);
+                const sleep = parseInt(ui.sleep.slider.value);
+
+                // 2. Risk Calculation
+                const weights = { hr: 0.20, fatigue: 0.40, accel: 0.15, sleep: 0.25 };
+                const normalizedHr = (hr - 40) / (120 - 40) * 10;
+                const normalizedFatigue = fatigue;
+                const normalizedAccel = accel / 10;
+                const normalizedSleep = 10 - sleep;
+
+                let score = (normalizedHr * weights.hr) +
+                            (normalizedFatigue * weights.fatigue) +
+                            (normalizedAccel * weights.accel) +
+                            (normalizedSleep * weights.sleep);
+                
+                lastAnalysisData = {
+                    name: playerName,
+                    raw: { hr, fatigue, accel, sleep },
+                    normalized: { normalizedHr, normalizedFatigue, normalizedAccel, normalizedSleep },
+                    weights,
+                };
+
+                // 3. Classification
+                let riskCategory, riskColorClass, riskClass;
+                if (score > 6.5) {
+                    riskCategory = 'High'; riskColorClass = 'bg-red-500/20 text-red-400'; riskClass = 'risk-High';
+                } else if (score > 3.5) {
+                    riskCategory = 'Medium'; riskColorClass = 'bg-yellow-500/20 text-yellow-400'; riskClass = 'risk-Medium';
+                } else {
+                    riskCategory = 'Low'; riskColorClass = 'bg-green-500/20 text-green-400'; riskClass = 'risk-Low';
+                }
+                lastAnalysisData.risk = { category: riskCategory, class: riskClass };
+                
+                // 4. Generate Insights
+                const factors = new Set(), recommendations = new Set(), coachSuggestions = new Set();
+                if (notes.toLowerCase().match(/cramp|tightness|soreness/)) {
+                    factors.add("Player reported muscular issues, a primary indicator of fatigue or strain.");
+                    coachSuggestions.add("Consider a modified training plan focusing on recovery. Assess movement patterns for compensation.");
+                }
+                if (normalizedFatigue > 6) {
+                    factors.add(`High fatigue level of ${fatigue}/10 significantly increases injury susceptibility.`);
+                    recommendations.add("Prioritize rest and active recovery. Ensure adequate nutrition and hydration.");
+                    coachSuggestions.add("Mandatory light session or rest day. This player is in the danger zone.");
+                }
+                if (normalizedAccel > 7) {
+                    factors.add("High recent training load suggests accumulated fatigue.");
+                    coachSuggestions.add("This is a critical time to deload. An accumulation of high-load days without adequate recovery is a primary risk factor.");
+                }
+                if (normalizedSleep > 6) {
+                    factors.add(`Poor sleep quality (${sleep}/10) is compromising physiological and cognitive recovery.`);
+                    recommendations.add("Focus on improving sleep hygiene: dark, quiet room, no screens before bed.");
+                    coachSuggestions.add("Discuss sleep habits with the player. It's a non-negotiable part of recovery.");
+                }
+                if (normalizedHr > 7) {
+                    factors.add(`Elevated resting heart rate (${hr} BPM) indicates the body is still recovering and under stress.`);
+                    recommendations.add("Incorporate low-intensity activities like walking or stretching.");
+                }
+                if (factors.size === 0) factors.add("No significant red flags in the provided metrics. Player appears prepared.");
+                if (recommendations.size === 0) recommendations.add("Maintain current preparation and recovery protocols. Continue monitoring daily metrics.");
+                if (coachSuggestions.size === 0) coachSuggestions.add("Player is cleared for full participation. Continue to monitor their response to training loads.");
+                else coachSuggestions.add("Open a dialogue with the player about their physical and mental state.");
+
+                lastAnalysisData.insights = { factors, recommendations, coachSuggestions };
+
+                // 5. Update UI
+                ui.initialMessage.classList.add('hidden');
+                ui.analysisResult.classList.remove('hidden');
+                
+                document.querySelectorAll('.report-card').forEach(el => el.classList.remove('fade-in-up'));
+                setTimeout(() => {
+                    document.querySelectorAll('.report-card').forEach((el, index) => {
+                        el.classList.add('fade-in-up');
+                        el.style.animationDelay = `${index * 100}ms`;
+                    });
+                }, 10);
+
+                ui.report.name.textContent = playerName;
+                ui.report.riskLevel.textContent = riskCategory;
+                ui.report.riskLevel.className = `text-4xl font-bold px-8 py-3 rounded-full pop-in ${riskColorClass}`;
+                
+                ui.report.factors.innerHTML = Array.from(factors).map(f => `<li>${f}</li>`).join('');
+                ui.report.recommendations.innerHTML = Array.from(recommendations).join(' ');
+                ui.report.coach.innerHTML = Array.from(coachSuggestions).join(' ');
+
+                // 6. Update Chart
+                updateDoughnutChart();
+                
+                ui.analyzeButton.disabled = false;
+                ui.analyzeButton.classList.remove('loading');
+
+            }, 750); // Simulate processing time
+        }
+        
+        // --- Charting Functions ---
+        function updateDoughnutChart() {
+            const { normalized, weights } = lastAnalysisData;
+            const chartData = {
+                labels: ['Fatigue', 'Sleep', 'Heart Rate', 'Load'],
+                datasets: [{
+                    data: [normalized.normalizedFatigue * weights.fatigue, normalized.normalizedSleep * weights.sleep, normalized.normalizedHr * weights.hr, normalized.normalizedAccel * weights.accel],
+                    backgroundColor: ['#f43f5e', '#a855f7', '#6366f1', '#f59e0b'],
+                    borderColor: '#1e293b',
+                    borderWidth: 4,
+                }]
+            };
+            if (charts.doughnut) charts.doughnut.destroy();
+            charts.doughnut = new Chart(document.getElementById('metricsChart'), {
+                type: 'doughnut',
+                data: chartData,
+                options: { 
+                    responsive: true, 
+                    animation: {
+                        animateScale: true,
+                        animateRotate: true,
+                        duration: 1000
+                    },
+                    plugins: { legend: { position: 'top', labels: { color: '#cbd5e1' } } } 
+                }
+            });
+        }
+
+        // --- PDF Generation ---
+        async function generatePdf() {
+            if (Object.keys(lastAnalysisData).length === 0) {
+                alert("Please run an analysis before downloading a report.");
+                return;
+            }
+            
+            const { name, raw, normalized, weights, risk, insights } = lastAnalysisData;
+
+            // 1. Create a temporary container for the PDF content, and append to body
+            const pdfContent = document.createElement('div');
+            pdfContent.id = 'pdf-content';
+            pdfContent.style.position = 'absolute';
+            pdfContent.style.left = '-9999px';
+            pdfContent.style.width = '800px';
+
+            pdfContent.innerHTML = `
+                <div class="p-8 bg-white text-slate-800">
+                    <h1 class="text-4xl font-extrabold mb-2">${name}</h1>
+                    <p class="text-slate-500 mb-8">Acute Injury Risk Report</p>
+                    
+                    <div class="grid grid-cols-3 gap-6 mb-6">
+                        <div class="border rounded-xl p-6 text-center">
+                            <h3 class="font-semibold mb-3">Overall Risk</h3>
+                            <div id="pdf-risk-level" class="text-3xl font-bold px-6 py-2 rounded-full"></div>
+                        </div>
+                        <div class="col-span-2 border rounded-xl p-4">
+                            <h3 class="font-semibold text-center mb-2">Risk Contribution</h3>
+                            <canvas id="pdfDoughnutChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="border rounded-xl p-6 mb-6">
+                        <h3 class="text-xl font-bold mb-3">Key Risk Factors</h3>
+                        <ul class="list-disc list-inside space-y-2">${Array.from(insights.factors).map(f => `<li>${f}</li>`).join('')}</ul>
+                    </div>
+                    <div class="border rounded-xl p-6 mb-6 bg-indigo-50">
+                        <h3 class="text-xl font-bold text-indigo-800 mb-3">Coach's Corner</h3>
+                        <p class="text-indigo-700">${Array.from(insights.coachSuggestions).join(' ')}</p>
+                    </div>
+                    <div class="border rounded-xl p-6 mb-6">
+                        <h3 class="text-xl font-bold mb-3">Player Recommendations</h3>
+                        <p>${Array.from(insights.recommendations).join(' ')}</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-6 pt-4 border-t mt-8">
+                        <div class="p-4">
+                            <h3 class="font-semibold text-center mb-2">Raw Input Values</h3>
+                            <canvas id="pdfPolarAreaChart"></canvas>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-semibold text-center mb-2">Normalized Risk Factors</h3>
+                            <canvas id="pdfBarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(pdfContent);
+
+            // Style the risk level badge for the PDF
+            const riskEl = pdfContent.querySelector('#pdf-risk-level');
+            riskEl.textContent = risk.category;
+            const riskColors = { High: 'bg-red-100 text-red-700', Medium: 'bg-yellow-100 text-yellow-700', Low: 'bg-green-100 text-green-700' };
+            riskEl.className += ` ${riskColors[risk.category]}`;
+
+            // 2. Render charts in the hidden container
+            const chartOptions = { animation: false, plugins: { legend: { labels: { color: '#1e293b' } } } };
+            new Chart(pdfContent.querySelector('#pdfDoughnutChart'), { type: 'doughnut', data: charts.doughnut.config.data, options: chartOptions });
+            new Chart(pdfContent.querySelector('#pdfPolarAreaChart'), { type: 'polarArea', data: { labels: ['Heart Rate', 'Fatigue', 'Load', 'Sleep'], datasets: [{ data: [raw.hr, raw.fatigue, raw.accel, raw.sleep], backgroundColor: ['#818cf8', '#f472b6', '#fbbf24', '#60a5fa'] }] }, options: chartOptions });
+            new Chart(pdfContent.querySelector('#pdfBarChart'), { type: 'bar', data: { labels: ['Fatigue', 'Sleep', 'HR', 'Load'], datasets: [{ data: [normalized.normalizedFatigue, normalized.normalizedSleep, normalized.normalizedHr, normalized.normalizedAccel], backgroundColor: ['#f472b6', '#60a5fa', '#818cf8', '#fbbf24'] }] }, options: { ...chartOptions, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { max: 10 } } } });
+
+            // 3. Allow charts to render, then capture
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            html2canvas(pdfContent.querySelector('.p-8'), { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const imgProps = pdf.getImageProperties(imgData);
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                
+                pdf.addImage(imgData, 'PNG', 5, 5, pdfWidth - 10, pdfHeight - 10);
+                pdf.save(`${name.replace(/\s/g, '_')}_Risk_Report.pdf`);
+                
+                // Cleanup
+                document.body.removeChild(pdfContent);
+            });
+        }
+    </script>
+</body>
+</html>

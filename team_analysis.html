@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PreHab: Team Analysis</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="https://unpkg.com/papaparse@5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #cbd5e1;
+            --accent-glow: 0 0 20px rgba(34, 211, 238, 0.5);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+
+        .aurora-background { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.4; }
+        .aurora-background::before, .aurora-background::after {
+            content: ''; position: absolute; width: 800px; height: 800px;
+            background-image: radial-gradient(circle, rgba(14, 165, 233, 0.5) 0%, rgba(14, 165, 233, 0) 60%);
+            border-radius: 50%; animation: aurora-move 25s infinite linear;
+        }
+        .aurora-background::after {
+            background-image: radial-gradient(circle, rgba(99, 102, 241, 0.4) 0%, rgba(99, 102, 241, 0) 60%);
+            top: -200px; left: -200px; animation: aurora-move-alt 25s infinite linear;
+        }
+        @keyframes aurora-move { 0% { transform: translate(0, 0) rotate(0deg); } 25% { transform: translate(40vw, 20vh) rotate(90deg); } 50% { transform: translate(0, 40vh) rotate(180deg); } 75% { transform: translate(-40vw, 20vh) rotate(270deg); } 100% { transform: translate(0, 0) rotate(360deg); } }
+        @keyframes aurora-move-alt { 0% { transform: translate(0, 0) rotate(0deg); } 25% { transform: translate(-30vw, -15vh) rotate(-90deg); } 50% { transform: translate(0, -30vh) rotate(-180deg); } 75% { transform: translate(30vw, -15vh) rotate(-270deg); } 100% { transform: translate(0, 0) rotate(-360deg); } }
+
+        .glass-card { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); transition: background 0.3s, border 0.3s, box-shadow 0.3s; }
+        
+        .animated-title span { display: inline-block; opacity: 0; animation: reveal-char 0.5s forwards; }
+        @keyframes reveal-char { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Card Animations & Effects --- */
+        .flip-card { perspective: 2000px; opacity: 0; animation: deal-in 0.6s ease-out forwards; }
+        @keyframes deal-in {
+            from { opacity: 0; transform: translateY(100px) rotateX(-45deg) scale(0.9); }
+            to { opacity: 1; transform: translateY(0) rotateX(0deg) scale(1); }
+        }
+
+        .flip-card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.8s; transform-style: preserve-3d; }
+        .flip-card:hover .flip-card-inner { transform: rotateY(180deg); }
+        
+        .flip-card-front, .flip-card-back {
+            position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden;
+            backface-visibility: hidden; display: flex; flex-direction: column;
+            border-radius: 1rem; padding: 1.25rem;
+            background-color: rgba(30, 41, 59, 0.6);
+            background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 10px 10px; border: 1px solid rgba(255, 255, 255, 0.1); overflow: hidden;
+        }
+        .flip-card-front { justify-content: center; align-items: center; }
+        .flip-card-back { transform: rotateY(180deg); justify-content: flex-start; }
+        .card-content { transition: transform 0.1s ease-out; }
+
+        /* --- Animated Border --- */
+        .flip-card-front::before {
+            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 1rem; border: 2px solid transparent;
+            background: conic-gradient(from var(--angle), #0ea5e9, #6366f1, #a855f7, #0ea5e9) border-box;
+            -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor; mask-composite: exclude;
+            animation: spin-border 4s linear infinite; opacity: 0;
+            transition: opacity 0.4s; pointer-events: none;
+        }
+        .flip-card:hover .flip-card-front::before { opacity: 1; }
+        @property --angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+        @keyframes spin-border { to { --angle: 360deg; } }
+        
+        .holographic-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.3), rgba(255,255,255,0) 50%); opacity: 0; pointer-events: none; transition: opacity 0.5s ease; }
+        .stat-item { display: flex; justify-content: space-between; width: 100%; font-size: 0.8rem; padding: 0.4rem 0.1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .stat-item:last-child { border-bottom: none; }
+
+        .swiper { width: 100%; padding: 50px 0; }
+        .swiper-slide { width: 340px; height: 220px; transition: transform 0.3s, opacity 0.3s; }
+        .swiper-slide-shadow { background: rgba(0,0,0,0.5) !important; }
+        
+        .scroll-reveal-section { opacity: 0; transform: translateY(50px); transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+        .scroll-reveal-section.is-visible { opacity: 1; transform: translateY(0); }
+
+        .loader-wrapper { display: none; justify-content: center; align-items: center; flex-direction: column; gap: 1rem; }
+        .loader { width: 50px; height: 50px; border: 4px solid rgba(203, 213, 225, 0.2); border-left-color: #67e8f9; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .position-selector button { transition: all 0.3s ease; background-color: rgba(30, 41, 59, 0.5); }
+        .position-selector button:hover { background-color: rgba(51, 65, 85, 0.7); }
+        .position-selector button.active { background-color: #0ea5e9; color: #ffffff; box-shadow: var(--accent-glow); }
+    </style>
+</head>
+<body class="min-h-screen p-4 sm:p-6 lg:p-8">
+    <div class="aurora-background"></div>
+
+    <div class="max-w-screen-xl mx-auto relative z-10">
+        <header class="text-center mb-10">
+            <h1 id="main-title" class="text-4xl sm:text-6xl font-black text-white tracking-tight animated-title"></h1>
+            <p id="main-caption" class="text-lg text-slate-400 mt-4 max-w-2xl mx-auto"></p>
+        </header>
+
+        <div class="max-w-xl mx-auto glass-card p-6 rounded-xl shadow-2xl mb-12">
+            <label for="csv-upload" class="block text-lg font-medium text-slate-300 mb-3">Upload Player Data (CSV)</label>
+            <input type="file" id="csv-upload" accept=".csv" class="block w-full text-sm text-slate-400
+                    file:mr-4 file:py-2.5 file:px-5 file:rounded-full file:border-0 file:text-sm file:font-semibold
+                    file:bg-cyan-500/10 file:text-cyan-300 hover:file:bg-cyan-500/20 cursor-pointer transition-all"/>
+        </div>
+
+        <div id="loader-area" class="loader-wrapper my-8">
+            <div class="loader"></div>
+            <p class="text-slate-400">Analyzing data...</p>
+        </div>
+        <div id="message-area" class="text-center my-4"></div>
+
+        <div id="results-section" class="hidden space-y-24">
+            <section id="top-performers-section" class="scroll-reveal-section">
+                <h2 class="text-3xl font-bold text-center mb-8 header-text-gradient">Top Performers</h2>
+                <div class="swiper">
+                    <div class="swiper-wrapper" id="top-performers-carousel"></div>
+                    <div class="swiper-pagination"></div>
+                </div>
+            </section>
+
+            <section id="all-players-section" class="scroll-reveal-section">
+                <h2 class="text-3xl font-bold text-center mb-8 header-text-gradient">The Full Roster</h2>
+                <div id="player-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-20"></div>
+            </section>
+
+            <section id="graphical-analysis-section" class="scroll-reveal-section">
+                <h2 class="text-3xl font-bold text-center mb-4 header-text-gradient">Interactive Performance Analysis</h2>
+                <div id="position-selector-container" class="flex justify-center gap-2 sm:gap-4 mb-6 flex-wrap"></div>
+                <div class="glass-card p-4 sm:p-6 rounded-xl w-full h-[60vh] min-h-[500px]">
+                    <canvas id="interactive-analysis-chart"></canvas>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainTitle = document.getElementById('main-title');
+            const mainCaption = document.getElementById('main-caption');
+            const fileInput = document.getElementById('csv-upload');
+            const resultsSection = document.getElementById('results-section');
+            const topPerformersCarousel = document.getElementById('top-performers-carousel');
+            const playerCardsGrid = document.getElementById('player-cards-grid');
+            const messageArea = document.getElementById('message-area');
+            const loaderArea = document.getElementById('loader-area');
+            const positionSelectorContainer = document.getElementById('position-selector-container');
+            let swiperInstance = null;
+            let interactiveChart = null;
+            let availableStatsInFile = [];
+
+            const chartColors = ['#f43f5e', '#0ea5e9', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+
+            function animateText(element, text) {
+                if (!element) return;
+                element.innerHTML = '';
+                text.split('').forEach((char, index) => {
+                    const span = document.createElement('span');
+                    span.textContent = char === ' ' ? '\u00A0' : char;
+                    span.style.animationDelay = `${index * 0.05}s`;
+                    element.appendChild(span);
+                });
+            }
+            animateText(mainTitle, 'PreHab: Team Analysis');
+            mainCaption.textContent = 'From Data to Dominance. Predictive analytics for peak performance and proactive injury prevention.';
+
+
+            fileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    clearResults();
+                    setLoading(true);
+                    parseCSV(file);
+                }
+            });
+
+            function setLoading(isLoading) { loaderArea.style.display = isLoading ? 'flex' : 'none'; }
+
+            function parseCSV(file) {
+                Papa.parse(file, {
+                    header: true, skipEmptyLines: true, dynamicTyping: true,
+                    complete: (results) => {
+                        setLoading(false);
+                        try {
+                            if (results.errors.length > 0) throw new Error("CSV Parsing Error. Check file format.");
+                            if (!results.data || results.data.length === 0) throw new Error("CSV file is empty or invalid.");
+                            const firstRow = results.data[0];
+                            availableStatsInFile = Object.keys(firstRow).filter(key => key !== 'Player Name' && key !== 'Position' && typeof firstRow[key] === 'number');
+                            analyzeData(results.data);
+                        } catch (error) { showMessage(error.message, 'error'); }
+                    },
+                    error: () => { setLoading(false); showMessage('Failed to read the file.', 'error'); }
+                });
+            }
+            
+            function analyzeData(players) {
+                if (!players[0]?.['Player Name'] || !players[0]?.Position) {
+                    return showMessage('Invalid CSV. Ensure "Player Name" and "Position" columns exist.', 'error');
+                }
+                displayTopPerformersCarousel(findTopPerformersByMetric(players));
+                players.forEach((player, index) => {
+                    if (player.Position) {
+                        const card = createPlayerFlipCard(player);
+                        card.style.animationDelay = `${index * 50}ms`;
+                        playerCardsGrid.appendChild(card);
+                    }
+                });
+                createInteractiveAnalysis(players);
+                resultsSection.classList.remove('hidden');
+                setupScrollAnimations();
+                setupHolographicEffect();
+                setupCardParallax();
+            }
+
+            function clearResults() {
+                if (swiperInstance) swiperInstance.destroy(true, true);
+                if (interactiveChart) interactiveChart.destroy();
+                swiperInstance = null; interactiveChart = null;
+                availableStatsInFile = [];
+                resultsSection.classList.add('hidden');
+                document.querySelectorAll('.scroll-reveal-section').forEach(el => el.classList.remove('is-visible'));
+                topPerformersCarousel.innerHTML = ''; playerCardsGrid.innerHTML = '';
+                messageArea.innerHTML = ''; positionSelectorContainer.innerHTML = '';
+            }
+
+            function findTopPerformersByMetric(players) {
+                return availableStatsInFile.map(stat => {
+                    const topPerformer = players.reduce((top, current) => ((current[stat] || 0) > (top[stat] || 0)) ? current : top, players[0]);
+                    return { metric: stat, player: topPerformer, value: topPerformer[stat] || 0 };
+                }).filter(item => item.value > 0).sort((a,b) => b.value - a.value);
+            }
+            
+            function displayTopPerformersCarousel(topPerformers) {
+                if(topPerformers.length === 0){
+                    document.getElementById('top-performers-section').style.display = 'none'; return;
+                }
+                document.getElementById('top-performers-section').style.display = 'block';
+
+                topPerformers.forEach(data => {
+                    const positionIcon = data.player.Position.startsWith('F') ? '⚽' : data.player.Position.startsWith('M') ? '🧠' : data.player.Position.startsWith('D') ? '🛡️' : '🧤';
+                    const positionColor = data.player.Position.startsWith('F') ? 'border-rose-500' : data.player.Position.startsWith('M') ? 'border-sky-500' : data.player.Position.startsWith('D') ? 'border-emerald-500' : 'border-amber-500';
+                    
+                    topPerformersCarousel.innerHTML += `<div class="swiper-slide"><div class="w-full h-full glass-card ${positionColor} border-2 rounded-xl flex flex-col justify-center items-center text-center p-2">
+                            <p class="text-sm font-bold text-cyan-300 uppercase tracking-wider">${data.metric}</p>
+                            <p class="text-2xl font-bold text-white mt-2 truncate w-full px-2" title="${data.player['Player Name']}">${data.player['Player Name']}</p>
+                            <p class="text-4xl font-black header-text-gradient mt-1">${data.value}</p>
+                            <div class="flex items-center text-sm text-slate-400 mt-3"><span class="mr-2">${positionIcon}</span> ${data.player.Position}</div>
+                        </div></div>`;
+                });
+                swiperInstance = new Swiper('.swiper', {
+                    effect: 'coverflow', grabCursor: true, centeredSlides: true,
+                    slidesPerView: 'auto', loop: true,
+                    autoplay: { delay: 5000, disableOnInteraction: false },
+                    coverflowEffect: { rotate: 40, stretch: 0, depth: 150, modifier: 1, slideShadows: true },
+                    pagination: { el: '.swiper-pagination', clickable: true },
+                });
+            }
+
+            function createPlayerFlipCard(player) {
+                const position = player.Position || 'N/A';
+                const positionIcon = position.startsWith('F') ? '⚽' : position.startsWith('M') ? '🧠' : position.startsWith('D') ? '🛡️' : '🧤';
+                const statsHtml = availableStatsInFile.map(stat => `<div class="stat-item"><span class="text-slate-400">${stat}</span><span class="font-semibold text-cyan-300">${player[stat] || 0}</span></div>`).join('');
+                const cardContainer = document.createElement('div');
+                cardContainer.className = 'flip-card min-h-[320px]';
+                cardContainer.innerHTML = `<div class="flip-card-inner h-full">
+                    <div class="flip-card-front">
+                        <div class="holographic-overlay"></div>
+                        <div class="card-content w-full flex flex-col items-center">
+                            <div class="w-24 h-24 rounded-full mb-4 flex items-center justify-center text-5xl bg-slate-900/50 border border-slate-700">${positionIcon}</div>
+                            <h3 class="text-xl font-bold text-white truncate w-full text-center" title="${player['Player Name']}">${player['Player Name']}</h3>
+                            <p class="text-md text-slate-400">${position}</p>
+                        </div>
+                        <div class="absolute bottom-4 text-xs font-semibold text-cyan-400/80 tracking-widest">HOVER TO FLIP</div>
+                    </div>
+                    <div class="flip-card-back"><h4 class="font-bold text-white mb-3 text-lg">${player['Player Name']}</h4><div class="w-full space-y-1 overflow-y-auto" style="max-height: 250px;">${statsHtml}</div></div>
+                </div>`;
+                return cardContainer;
+            }
+
+            function createInteractiveAnalysis(players) {
+                const availablePositions = [...new Set(players.map(p => p.Position))].filter(Boolean);
+                if(availablePositions.length === 0){ document.getElementById('graphical-analysis-section').style.display = 'none'; return; }
+                document.getElementById('graphical-analysis-section').style.display = 'block';
+
+                availablePositions.forEach((position, index) => {
+                    const button = document.createElement('button');
+                    button.textContent = position;
+                    button.className = 'py-2 px-4 rounded-lg text-sm font-semibold position-selector';
+                    if (index === 0) button.classList.add('active');
+                    button.onclick = () => {
+                        document.querySelectorAll('.position-selector button').forEach(btn => btn.classList.remove('active'));
+                        button.classList.add('active');
+                        updateAnalysisChart(position, players);
+                    };
+                    positionSelectorContainer.appendChild(button);
+                });
+                if (availablePositions.length > 0) updateAnalysisChart(availablePositions[0], players);
+            }
+
+            function updateAnalysisChart(position, allPlayers) {
+                if (interactiveChart) interactiveChart.destroy();
+                const playersInPosition = allPlayers.filter(p => p.Position === position);
+                const datasets = playersInPosition.map((player, index) => {
+                    const color = chartColors[index % chartColors.length];
+                    return { label: player['Player Name'], data: availableStatsInFile.map(stat => player[stat] || 0),
+                        borderColor: color, backgroundColor: `${color}33`, pointBackgroundColor: color,
+                        pointBorderColor: '#fff', pointHoverBackgroundColor: '#fff', pointHoverBorderColor: color };
+                });
+                Chart.defaults.color = 'rgba(203, 213, 225, 0.7)'; Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
+                interactiveChart = new Chart('interactive-analysis-chart', {
+                    type: 'radar', data: { labels: availableStatsInFile, datasets: datasets },
+                    options: { responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { position: 'top', labels: { boxWidth: 12, padding: 15 } } },
+                        scales: { r: { pointLabels: { font: { size: 12 } }, grid: { color: 'rgba(255, 255, 255, 0.1)' }, angleLines: { color: 'rgba(255, 255, 255, 0.1)' } } }
+                    }
+                });
+            }
+
+            function setupScrollAnimations() {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('is-visible'); observer.unobserve(entry.target); } });
+                }, { threshold: 0.1 });
+                document.querySelectorAll('.scroll-reveal-section').forEach(section => observer.observe(section));
+            }
+
+            function setupHolographicEffect() {
+                document.querySelectorAll('.flip-card-front').forEach(card => {
+                    const overlay = card.querySelector('.holographic-overlay');
+                    card.addEventListener('mousemove', (e) => {
+                        const rect = card.getBoundingClientRect();
+                        const x = e.clientX - rect.left; const y = e.clientY - rect.top;
+                        overlay.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255,255,255,0.25), rgba(255,255,255,0) 50%)`;
+                        overlay.style.opacity = '1';
+                    });
+                    card.addEventListener('mouseleave', () => { overlay.style.opacity = '0'; });
+                });
+            }
+            
+            function setupCardParallax() {
+                document.querySelectorAll('.flip-card').forEach(card => {
+                    const content = card.querySelector('.card-content');
+                    card.addEventListener('mousemove', (e) => {
+                        const rect = card.getBoundingClientRect();
+                        const x = e.clientX - rect.left; const y = e.clientY - rect.top;
+                        const { width, height } = rect;
+                        const moveX = (x / width - 0.5) * 20;
+                        const moveY = (y / height - 0.5) * 20;
+                        content.style.transform = `translate(${moveX}px, ${moveY}px)`;
+                    });
+                    card.addEventListener('mouseleave', () => {
+                        content.style.transform = `translate(0px, 0px)`;
+                    });
+                });
+            }
+            
+            function showMessage(text, type = 'info') {
+                const typeClasses = { error: 'bg-rose-500/20 text-rose-300', success: 'bg-emerald-500/20 text-emerald-300', info: 'bg-sky-500/20 text-sky-300' };
+                messageArea.className = `text-center my-4 p-3 rounded-lg text-sm font-medium transition-all duration-300 ${typeClasses[type] || typeClasses.info}`;
+                messageArea.textContent = text;
+            }
+        });
+    </script>
+</body>
+</html>
