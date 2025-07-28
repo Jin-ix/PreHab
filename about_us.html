@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us | Prehab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* General Setup and Variables */
+        :root {
+            --primary-color: #007BFF;
+            --primary-hover: #0056b3;
+            --dark-bg: #1a1a2e;
+            --dark-card-bg: #162447;
+            --light-text: #f0f0f0;
+            --dark-text: #333;
+            --font-family: 'Poppins', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-family);
+            line-height: 1.6;
+            background-color: #f9f9f9;
+            color: var(--dark-text);
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Header and Navigation */
+        header {
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+        }
+
+        .nav-links li {
+            margin-left: 2rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--dark-text);
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+
+        /* Hero Section */
+        .hero {
+            height: 60vh;
+            background: linear-gradient(rgba(26, 26, 46, 0.7), rgba(26, 26, 46, 0.7)), url('https://images.unsplash.com/photo-1517466787929-bc90951d0974?q=80&w=1886&auto=format&fit=crop') no-repeat center center/cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--light-text);
+            padding-top: 60px; /* Offset for fixed header */
+        }
+
+        .hero-content h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .hero-content p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto;
+            font-weight: 300;
+        }
+
+        /* General Content Sections */
+        .content-section {
+            padding: 4rem 0;
+        }
+        .content-section-dark {
+            padding: 4rem 0;
+            background-color: var(--dark-bg);
+            color: var(--light-text);
+        }
+        .content-section h2, .content-section-dark h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .section-intro {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto 3rem auto;
+            font-size: 1.1rem;
+        }
+
+        /* Problem Section Specifics */
+        .problem-content {
+            display: flex;
+            align-items: center;
+            gap: 3rem;
+            margin-top: 3rem;
+        }
+        .problem-text {
+            flex: 1;
+        }
+        .problem-image {
+            flex: 1;
+        }
+        .problem-image img {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        /* Solution Cards */
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .card {
+            background-color: var(--dark-card-bg);
+            padding: 2rem;
+            border-radius: 10px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 123, 255, 0.2);
+        }
+
+        .card-icon svg {
+            width: 50px;
+            height: 50px;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #fff;
+        }
+
+        /* Objectives & Tech List */
+        .objectives-list, .tech-content ul {
+            list-style: none;
+            margin-top: 3rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .objectives-list li, .tech-content li {
+            background-color: #f0f0f0;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-radius: 5px;
+            border-left: 5px solid var(--primary-color);
+        }
+        .tech-content li {
+            background-color: var(--dark-card-bg);
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--dark-bg);
+            color: var(--light-text);
+            text-align: center;
+            padding: 2rem 0;
+        }
+        footer p {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Animation Classes */
+        .hidden {
+            opacity: 0;
+            filter: blur(5px);
+            transform: translateX(-50px);
+            transition: all 1s;
+        }
+
+        .show {
+            opacity: 1;
+            filter: blur(0);
+            transform: translateX(0);
+        }
+
+        /* Staggered animation delays for lists/cards */
+        .card:nth-child(2), .objectives-list li:nth-child(2) { transition-delay: 200ms; }
+        .card:nth-child(3), .objectives-list li:nth-child(3) { transition-delay: 400ms; }
+        .objectives-list li:nth-child(4) { transition-delay: 600ms; }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none; /* Simplification for demo. Use JS for hamburger menu */
+            }
+            .problem-content {
+                flex-direction: column;
+            }
+            .hero-content h1 { font-size: 2.5rem; }
+            .content-section h2, .content-section-dark h2 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <nav class="container">
+            <a href="#" class="logo">PREHAB</a>
+            <ul class="nav-links">
+                <li><a href="#problem">The Problem</a></li>
+                <li><a href="#solution">Our Solution</a></li>
+                <li><a href="#mission">Mission</a></li>
+                <li><a href="#tech">Technology</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="hero-content container">
+                <h1 class="hidden">Predict the Risk. Prevent the Fall.</h1>
+                <p class="hidden">Welcome to Prehab, a smart injury risk prediction and recovery assistant for footballers. We're closing the gap between expensive elite technology and the teams that need it most, making top-tier injury prevention accessible to all.</p>
+            </div>
+        </section>
+
+        <section id="problem" class="content-section container">
+            <h2 class="hidden">The Problem We're Solving</h2>
+            <div class="problem-content">
+                <div class="problem-text hidden">
+                    <p>Frequent training, matches, and poor recovery make footballers highly injury-prone. Elite clubs use expensive wearables to manage this, but most teams simply can't afford them. This creates a huge gap in player care, leaving athletes at risk and coaches without the data needed for safe training decisions. While tools for tactical analysis exist, they are not built specifically for injury prediction.</p>
+                </div>
+                <div class="problem-image hidden">
+                     <img src="https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=1935&auto=format&fit=crop" alt="Football on a green pitch">
+                </div>
+            </div>
+        </section>
+
+
+        <section id="solution" class="content-section-dark">
+            <div class="container">
+                <h2 class="hidden">Our Solution: The Prehab Advantage</h2>
+                <p class="section-intro hidden">Prehab is a machine learning-powered web app that forecasts injury risk without expensive hardware. We provide an intelligence dashboard that uses player data to predict injuries and offer tailored training and recovery recommendations.</p>
+                <div class="cards-container">
+                    <div class="card hidden">
+                        <div class="card-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12s-1.536.219-2.121.781c-1.172.879-1.172 2.303 0 3.182Z" /></svg>
+                        </div>
+                        <h3>Affordability & Accessibility</h3>
+                        <p>We provide a low-cost system for amateur and semi-pro teams, built on open-source tools like Python and Streamlit to ensure it remains accessible.</p>
+                    </div>
+                    <div class="card hidden">
+                         <div class="card-icon">
+                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" /></svg>
+                        </div>
+                        <h3>Integrated Intelligence</h3>
+                        <p>Our platform unifies data analysis, risk prediction, and personalized guidance into a single, seamless application.</p>
+                    </div>
+                    <div class="card hidden">
+                         <div class="card-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21 .865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.17 48.17 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" /></svg>
+                        </div>
+                        <h3>Personalized Guidance</h3>
+                        <p>Our virtual assistant provides tailored recovery and training advice, moving beyond generic rehab plans.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="mission" class="content-section container">
+            <h2 class="hidden">Our Mission & Objectives</h2>
+            <p class="section-intro hidden">Our primary objective is to develop a machine learning-powered web app that forecasts football injury risk, visualizes player workload trends, and offers personalized recovery advice through a virtual assistant.</p>
+            <ul class="objectives-list">
+                <li class="hidden">
+                    <strong>Simulate Data:</strong> To simulate realistic player workload data that reflects typical training, recovery, and match patterns.
+                </li>
+                <li class="hidden">
+                    <strong>Classify Risk:</strong> To classify injury risk levels (Low, Moderate, High, Very High) using machine learning.
+                </li>
+                 <li class="hidden">
+                    <strong>Build a Dashboard:</strong> To build a dashboard for coaches and players to track individual performance and injury trends over time.
+                </li>
+                <li class="hidden">
+                    <strong>Enable Data Handling:</strong> To enable data upload and export features (e.g., CSV import, PDF report generation) for ease of use.
+                </li>
+            </ul>
+        </section>
+
+        <section id="tech" class="content-section-dark">
+            <div class="container">
+                <h2 class="hidden">The Technology Behind Prehab</h2>
+                <div class="tech-content">
+                    <div class="tech-text hidden">
+                        <p>Our system is built on a foundation of robust and proven technologies to ensure accuracy and reliability for coaches and players.</p>
+                        <ul>
+                            <li><strong>Core Algorithm:</strong> We use a Random Forest Classifier. It works very well with structured data, handles many input features, and is robust to noise. It also tells you which features are most important.</li>
+                            <li><strong>System Design:</strong> The platform allows coaching staff to upload player data, which is processed by our model to predict risk and generate downloadable reports.</li>
+                            <li><strong>Data Sources:</strong> Our model is informed by simulated wearable-style datasets and public data from sources like the FIFA Football Dataset and NCAA's Sports Injury Surveillance System.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Prehab. All Rights Reserved.</p>
+            <p>Predict the Risk. Prevent the Fall.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // Intersection Observer for fade-in animations
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('show');
+                    }
+                });
+            });
+
+            const hiddenElements = document.querySelectorAll('.hidden');
+            hiddenElements.forEach(el => observer.observe(el));
+
+        });
+    </script>
+</body>
+</html>

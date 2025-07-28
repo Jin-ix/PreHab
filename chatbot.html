@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coach AI - Prehab Chatbot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Base Styling and Variables */
+        :root {
+            --primary-color: #3d5afe;
+            --primary-hover: #304ffe;
+            --secondary-color: #1976d2;
+            --light-bg: #f5f7fa;
+            --white-bg: #ffffff;
+            --border-color: #e8eaf6;
+            --dark-text: #263238;
+            --light-text: #546e7a;
+            --ai-message-bg: linear-gradient(135deg, #e8eaf6, #e1e5f2);
+            --user-message-bg: #f5f5f5;
+            --error-bg: #ffebee;
+            --error-text: #c62828;
+            --success-bg: #e8f5e9;
+            --success-text: #2e7d32;
+            --font-family: 'Poppins', sans-serif;
+            --box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            --box-shadow-light: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        /* General Body and Layout */
+        body {
+            font-family: var(--font-family);
+            background-color: var(--light-bg);
+            background: linear-gradient(-45deg, #3d5afe, #304ffe, #1976d2, #29b6f6);
+            background-size: 400% 400%;
+            animation: gradientBG 20s ease infinite;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .app-container {
+            display: flex;
+            width: 100%;
+            max-width: 1200px;
+            height: 90vh;
+            max-height: 850px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transform: scale(0.95);
+            opacity: 0;
+            animation: popIn 0.7s 0.2s ease-out forwards;
+        }
+
+        @keyframes popIn {
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Input Panel (Left Side) */
+        .input-panel {
+            flex-basis: 35%;
+            padding: 40px;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .input-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .input-panel h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 0;
+            animation: shimmer 5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                text-shadow: 0 0 5px rgba(61, 90, 254, 0);
+            }
+            50% {
+                text-shadow: 0 0 20px rgba(61, 90, 254, 0.5);
+            }
+            100% {
+                text-shadow: 0 0 5px rgba(61, 90, 254, 0);
+            }
+        }
+        
+        #new-chat-btn {
+            background: none;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        #new-chat-btn:hover {
+            background-color: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(61, 90, 254, 0.2);
+        }
+        
+        .input-panel h2 {
+            font-size: 32px;
+            color: var(--dark-text);
+            margin-bottom: 10px;
+        }
+
+        .input-panel p {
+            color: var(--light-text);
+            margin-bottom: 30px;
+            font-size: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: var(--dark-text);
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+
+        .form-group textarea, .form-group input[type="email"] {
+            width: 100%;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            font-family: var(--font-family);
+            font-size: 14px;
+            resize: vertical;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+        
+        .form-group textarea {
+             min-height: 80px;
+        }
+
+        .form-group textarea:focus, .form-group input[type="email"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(61, 90, 254, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Email Toggle Switch */
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .toggle-switch input {
+            display: none;
+        }
+        .toggle-switch .slider {
+            position: relative;
+            cursor: pointer;
+            width: 44px;
+            height: 24px;
+            background-color: #ccc;
+            border-radius: 24px;
+            transition: background-color 0.3s;
+        }
+        .toggle-switch .slider:before {
+            content: "";
+            position: absolute;
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+        .toggle-switch input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+        .toggle-switch input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        #email-group {
+            display: none; /* Hidden by default */
+            margin-top: 15px;
+        }
+
+        #submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(61, 90, 254, 0.3);
+            margin-top: 10px;
+        }
+
+        #submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(61, 90, 254, 0.4);
+        }
+        
+        #submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .form-status {
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            display: none; /* Hidden by default */
+        }
+
+        .form-status.error {
+            color: var(--error-text);
+            background-color: var(--error-bg);
+        }
+        .form-status.success {
+            color: var(--success-text);
+            background-color: var(--success-bg);
+        }
+
+
+        /* Conversation Panel (Right Side) */
+        .conversation-panel {
+            flex-basis: 65%;
+            display: flex;
+            flex-direction: column;
+            background-color: #fafbff;
+        }
+
+        .conversation-panel h2 {
+            padding: 25px 35px;
+            font-size: 24px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--dark-text);
+            margin: 0;
+        }
+
+        .chat-window {
+            flex-grow: 1;
+            padding: 35px;
+            overflow-y: auto;
+        }
+
+        .chat-message {
+            display: flex;
+            margin-bottom: 25px;
+        }
+        
+        .ai-message {
+            animation: slideInLeft 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+        
+        .user-message {
+            justify-content: flex-end;
+            animation: slideInRight 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+        
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .message-bubble {
+            max-width: 80%;
+            padding: 18px 22px;
+            border-radius: 20px;
+            line-height: 1.6;
+            position: relative;
+            box-shadow: var(--box-shadow-light);
+        }
+        
+        .message-bubble p, .message-bubble ul {
+            margin: 0 0 10px 0;
+        }
+        
+        .message-bubble p:last-child, .message-bubble ul:last-child {
+            margin-bottom: 0;
+        }
+
+        .message-bubble ul {
+            padding-left: 20px;
+        }
+        
+        .message-bubble li {
+            margin-bottom: 5px;
+        }
+        
+        .message-bubble li:last-child {
+            margin-bottom: 0;
+        }
+        
+        .thinking-animation {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 20px;
+        }
+
+        .thinking-animation span {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background-color: var(--primary-color);
+            border-radius: 50%;
+            margin: 0 4px;
+            animation: thinking-pulse 1.4s infinite ease-in-out;
+        }
+
+        .thinking-animation span:nth-child(1) {
+            animation-delay: -0.3s;
+        }
+
+        .thinking-animation span:nth-child(2) {
+            animation-delay: -0.15s;
+        }
+
+        @keyframes thinking-pulse {
+            0%, 80%, 100% {
+                transform: scale(0.6);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .message-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: var(--white-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            flex-shrink: 0;
+            box-shadow: var(--box-shadow-light);
+            animation: popInIcon 0.5s 0.2s ease-out forwards;
+            transform: scale(0);
+        }
+
+        @keyframes popInIcon {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        .message-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* AI Message Styling */
+        .ai-message .message-bubble {
+            background: var(--ai-message-bg);
+            border-top-left-radius: 5px;
+            color: var(--dark-text);
+        }
+        
+        .ai-message .message-icon {
+             background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+             color: white;
+        }
+
+        /* User Message Styling */
+        .user-message .message-bubble {
+            background-color: var(--white-bg);
+            border-top-right-radius: 5px;
+            order: 1;
+        }
+        
+        .user-message .message-icon {
+            order: 2;
+            margin-right: 0;
+            margin-left: 15px;
+            background-color: #78909c;
+            color: white;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 900px) {
+            .app-container {
+                flex-direction: column;
+                height: auto;
+                max-height: none;
+            }
+            .input-panel {
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .chat-window {
+                min-height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="input-panel">
+            <div class="input-panel-header">
+                <h1>Prehab</h1>
+                <button id="new-chat-btn">New Chat</button>
+            </div>
+            <h2>Coach AI</h2>
+            <p>Describe the injury to get AI-powered rehabilitation advice. Provide as much detail as possible for the best guidance.</p>
+            
+            <form id="rehab-form">
+                <div class="form-group">
+                    <label for="injury-description">Injury Description</label>
+                    <textarea id="injury-description" placeholder="e.g., Sprained left ankle during practice, landed awkwardly after a jump. Swelling and pain on the outside." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="player-details">Player Details</label>
+                    <textarea id="player-details" placeholder="e.g., 22-year-old semi-pro soccer player, trains 4 times a week, plays 1 match." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="rehab-goals">Rehabilitation Goals</label>
+                    <textarea id="rehab-goals" placeholder="e.g., Return to playing within 6 weeks, improve ankle stability to prevent re-injury." required></textarea>
+                </div>
+                <div class="form-group">
+                     <div class="toggle-switch">
+                        <label for="send-email-switch">Send Report via Email</label>
+                        <label class="switch">
+                            <input type="checkbox" id="send-email-switch">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                 <div class="form-group" id="email-group">
+                    <label for="player-email">Player's Email</label>
+                    <input type="email" id="player-email" placeholder="player@example.com">
+                </div>
+
+                <button type="submit" id="submit-btn">Get Guidance</button>
+                <div id="form-status" class="form-status"></div>
+            </form>
+        </div>
+
+        <div class="conversation-panel">
+            <h2>Conversation</h2>
+            <div class="chat-window" id="chat-window">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Element References
+        const rehabForm = document.getElementById('rehab-form');
+        const chatWindow = document.getElementById('chat-window');
+        const submitButton = document.getElementById('submit-btn');
+        const statusDiv = document.getElementById('form-status');
+        const newChatButton = document.getElementById('new-chat-btn');
+        const emailSwitch = document.getElementById('send-email-switch');
+        const emailGroup = document.getElementById('email-group');
+        const playerEmailInput = document.getElementById('player-email');
+        
+        const initialMessage = `<p>Hello! I'm <strong>Coach AI</strong>, your AI rehabilitation assistant. To start, please provide the injury details, player information, and your rehabilitation goals in the form.</p>`;
+
+        // Initial Setup
+        document.addEventListener('DOMContentLoaded', () => {
+            addMessageToChat(initialMessage, 'ai');
+        });
+
+        // Event listener for the email toggle switch
+        emailSwitch.addEventListener('change', () => {
+            if (emailSwitch.checked) {
+                emailGroup.style.display = 'block';
+            } else {
+                emailGroup.style.display = 'none';
+            }
+        });
+
+        // Event listener for the main form submission
+        rehabForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); 
+            
+            clearStatus();
+
+            const injuryDesc = document.getElementById('injury-description').value;
+            const playerDetails = document.getElementById('player-details').value;
+            const rehabGoals = document.getElementById('rehab-goals').value;
+
+            if (!injuryDesc.trim() || !playerDetails.trim() || !rehabGoals.trim()) {
+                showStatus('Please fill out all required fields.', 'error');
+                return;
+            }
+
+            submitButton.disabled = true;
+            submitButton.innerHTML = 'Analyzing...';
+
+            const userMessage = `
+                <p><strong>Injury:</strong> ${injuryDesc}</p>
+                <p><strong>Player:</strong> ${playerDetails}</p>
+                <p><strong>Goals:</strong> ${rehabGoals}</p>
+            `;
+            addMessageToChat(userMessage, 'user');
+            
+            const responseBubbleId = 'response-' + Date.now();
+            addMessageToChat('<div class="thinking-animation"><span></span><span></span><span></span></div>', 'ai', responseBubbleId);
+
+            await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate thinking time
+
+            let aiResponseText = '';
+            try {
+                // This is the raw text response for the email
+                aiResponseText = `
+Okay, based on your details about the ${injuryDesc.toLowerCase()} for a ${playerDetails.toLowerCase()}, here is a sample plan designed to help you ${rehabGoals.toLowerCase()}.
+
+Phase 1: Protection & Pain Control (First 2-5 days)
+- Goal: To reduce swelling and pain, and protect the ankle from further injury. This is a critical first step.
+- Exercises:
+- Gentle ankle pumps (pointing toes up and down).
+- Ankle circles (slowly, within a pain-free range).
+- Progression Criteria: A significant reduction in swelling and the ability to bear some weight without sharp pain.
+
+Phase 2: Range of Motion & Early Strengthening (Approx. Day 5 - Week 2)
+- Goal: To restore normal range of motion and begin gentle strengthening exercises.
+- Exercises:
+- Towel stretches (pulling the foot towards you with a towel).
+- Seated resistance band exercises (pushing against the band in all four directions).
+- Progression Criteria: Achieving full or near-full pain-free range of motion.
+
+Phase 3: Strength & Proprioception (Approx. Week 2 - Week 4)
+- Goal: To build strength in the ankle and improve your balance and stability.
+- Exercises:
+- Calf raises (double leg, progressing to single leg).
+- Single-leg balance (starting on a stable surface, then progressing to an unstable one like a pillow).
+- Progression Criteria: The ability to perform single-leg activities without pain or instability.
+
+Phase 4: Sport-Specific Training (Approx. Week 4 - Week 6+)
+- Goal: To safely return to football-specific movements and achieve your goal of getting back to playing.
+- Exercises:
+- Light jogging, then running in straight lines.
+- Cutting, jumping, and sport-specific drills (e.g., dribbling, passing).
+- Progression Criteria: Full confidence and pain-free completion of all sport-specific drills.
+
+General Strengthening Tips for Injury Prevention
+- After your rehabilitation, focus on these to meet your goal of preventing re-injury:
+- Core Stability: A strong core provides a stable base for all movements. Include planks, side planks, and bird-dog exercises.
+- Hip Strength: Strong hips are crucial for controlling leg movements. Add exercises like clamshells, glute bridges, and lateral band walks.
+- Plyometrics: Once fully recovered, gradually introduce jumping and landing exercises to improve power and control.
+                `;
+
+                const formattedAiResponse = formatMarkdown(aiResponseText);
+                updateMessage(responseBubbleId, formattedAiResponse);
+
+                // Handle email sending if the switch is on
+                if (emailSwitch.checked) {
+                    await handleEmailSending(aiResponseText);
+                }
+
+            } catch (error) {
+                console.error("Error during simulation:", error);
+                const errorMessage = `<p>An unexpected error occurred while generating the response.</p>`;
+                updateMessage(responseBubbleId, errorMessage);
+            } finally {
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Get Guidance';
+            }
+        });
+        
+        async function handleEmailSending(reportContent) {
+            const playerEmail = playerEmailInput.value;
+            if (!validateEmail(playerEmail)) {
+                addMessageToChat(`<p>Could not send the email. The address '${playerEmail}' is not valid. Please correct it and try again.</p>`, 'ai');
+                return;
+            }
+
+            const sendingMsgId = 'sending-' + Date.now();
+            addMessageToChat(`<p>Sending report to ${playerEmail}...</p>`, 'ai', sendingMsgId);
+
+            // Simulate sending the email
+            const success = await sendEmail(playerEmail, reportContent);
+
+            if (success) {
+                updateMessage(sendingMsgId, `<p>✅ The rehabilitation plan has been successfully sent to <strong>${playerEmail}</strong>.</p>`);
+            } else {
+                 updateMessage(sendingMsgId, `<p>❌ There was a problem sending the email. Please try again later.</p>`);
+            }
+        }
+        
+        // Mock function to simulate sending an email
+        async function sendEmail(recipientEmail, content) {
+            console.log("--- Email Simulation ---");
+            console.log(`From: prehabaiassistant@gmail.com`);
+            console.log(`To: ${recipientEmail}`);
+            console.log("Password: (Simulated - not used)");
+            console.log("Content:", content);
+            
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate network delay
+            
+            // In a real app, this would involve a backend API call.
+            // Here, we'll just simulate a successful outcome.
+            console.log("--- Email Sent (Simulated) ---");
+            return true; 
+        }
+
+        // Event listener for the "New Chat" button
+        newChatButton.addEventListener('click', () => {
+            chatWindow.innerHTML = '';
+            addMessageToChat(initialMessage, 'ai');
+            rehabForm.reset();
+            clearStatus();
+            emailGroup.style.display = 'none';
+            submitButton.disabled = false;
+            submitButton.innerHTML = 'Get Guidance';
+        });
+        
+        function addMessageToChat(content, sender, id = '') {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${sender}-message`;
+            if (id) {
+                messageDiv.id = id;
+            }
+
+            const iconSvg = sender === 'ai' 
+                ? `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 21v-1.5M12 3v1.5m0 15V21m3.75-18v1.5M12 8.25a3.75 3.75 0 1 0 0 7.5 3.75 3.75 0 0 0 0-7.5ZM12 15a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5Z" /></svg>`
+                : `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg>`;
+
+            messageDiv.innerHTML = `
+                <div class="message-icon">${iconSvg}</div>
+                <div class="message-bubble">${content}</div>
+            `;
+            chatWindow.appendChild(messageDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+        
+        function updateMessage(id, newContent) {
+            const messageElement = document.getElementById(id);
+            if (messageElement) {
+                const bubble = messageElement.querySelector('.message-bubble');
+                if (bubble) {
+                    bubble.innerHTML = newContent;
+                }
+            }
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function formatMarkdown(text) {
+            // Protect against XSS by escaping HTML, then apply formatting.
+            text = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            
+            // Bold, Italics
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            
+            const paragraphs = text.trim().split(/\n\s*\n/);
+            let html = paragraphs.map(p => {
+                const trimmedP = p.trim();
+                if (trimmedP.startsWith('-')) {
+                    const listItems = trimmedP.split('\n').map(item => {
+                        const trimmedItem = item.trim();
+                        if (trimmedItem) {
+                             // Handle nested items (e.g., - Goal: ... - Exercises: ...)
+                             const content = trimmedItem.substring(1).trim();
+                             return `<li>${content}</li>`;
+                        }
+                        return '';
+                    }).join('');
+                    return listItems ? `<ul>${listItems}</ul>` : '';
+                }
+                return `<p>${trimmedP.replace(/\n/g, '<br>')}</p>`;
+            }).join('');
+            return html;
+        }
+
+        function showStatus(message, type = 'error') {
+            statusDiv.textContent = message;
+            statusDiv.className = `form-status ${type}`;
+            statusDiv.style.display = 'block';
+        }
+
+        function clearStatus() {
+            statusDiv.style.display = 'none';
+        }
+
+        function validateEmail(email) {
+            const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+            return re.test(String(email).toLowerCase());
+        }
+
+    </script>
+</body>
+</html>

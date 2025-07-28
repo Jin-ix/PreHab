@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prehab - Coach Dashboard</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0F172A; /* slate-900 */
+            overflow-x: hidden;
+        }
+
+        /* Animated Gradient Background */
+        .animated-bg {
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            background: linear-gradient(315deg, #0f172a, #1e293b, #3b82f6);
+            background-size: 400% 400%;
+            animation: gradient-animation 15s ease infinite;
+        }
+
+        @keyframes gradient-animation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Glassmorphism Effect */
+        .glass-effect {
+            background: rgba(15, 23, 42, 0.6); /* slate-900 with opacity */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Enhanced Card Hover Effect */
+        .card-hover-effect {
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        .card-hover-effect:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 30px rgba(0,0,0,0.3);
+            border-color: rgba(59, 130, 246, 0.5); /* blue-500 */
+        }
+        .card-hover-effect .lucide {
+            transition: transform 0.3s ease;
+        }
+        .card-hover-effect:hover .lucide {
+            transform: scale(1.1);
+        }
+
+        /* Chart Bar Animation */
+        .chart-bar {
+            transform-origin: bottom;
+            animation: grow-bar 1s ease-out forwards;
+            transform: scaleY(0);
+        }
+        @keyframes grow-bar {
+            from { transform: scaleY(0); }
+            to { transform: scaleY(1); }
+        }
+
+        /* Button Enhancements */
+        .btn-gradient {
+            background-image: linear-gradient(to right, #3b82f6, #60a5fa);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+        }
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+        .btn-gradient:active {
+            transform: translateY(0px);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+        }
+
+        /* Modal Animation */
+        .modal-content {
+            animation: slide-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        @keyframes slide-in {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        /* Entry Animations */
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up {
+            animation: fade-in-up 0.6s ease-out forwards;
+            opacity: 0;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1E293B; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748B; }
+    </style>
+</head>
+<body class="text-gray-200">
+    <div class="animated-bg"></div>
+
+    <div class="min-h-screen flex flex-col relative z-10">
+        <!-- Header -->
+        <header class="glass-effect sticky top-0 z-20">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <!-- Logo -->
+                    <div class="flex-shrink-0">
+                        <a href="#" class="flex items-center space-x-2">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
+                            <span class="text-2xl font-bold text-white">Prehab</span>
+                        </a>
+                    </div>
+                    
+                    <!-- Navigation & Profile -->
+                    <div class="flex items-center space-x-4">
+                        <nav class="hidden md:flex space-x-6 text-gray-400 font-medium">
+                            <a href="#" class="hover:text-blue-400 transition-colors">Dashboard</a>
+                            <a href="#" class="hover:text-blue-400 transition-colors">Players</a>
+                            <a href="#" class="hover:text-blue-400 transition-colors">Risk Analysis</a>
+                            <a href="#" class="hover:text-blue-400 transition-colors">Reports</a>
+                        </nav>
+                        <div class="flex items-center space-x-3">
+                            <button class="p-2 rounded-full text-gray-400 hover:text-white hover:bg-slate-700 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bell"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                            </button>
+                            <!-- Profile Dropdown -->
+                            <div class="relative" id="profile-menu-container">
+                                <button id="profile-menu-button">
+                                    <img class="h-10 w-10 rounded-full object-cover ring-2 ring-slate-600 hover:ring-blue-500 transition-all" src="https://placehold.co/100x100/1E293B/FFFFFF?text=C" alt="Coach profile picture">
+                                </button>
+                                <div id="profile-menu" class="hidden absolute right-0 mt-2 w-48 bg-slate-800 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-30">
+                                    <a href="#" id="profile-link" class="block px-4 py-2 text-sm text-gray-300 hover:bg-slate-700">Your Profile</a>
+                                    <a href="#" id="settings-link" class="block px-4 py-2 text-sm text-gray-300 hover:bg-slate-700">Settings</a>
+                                    <a href="#" id="support-link" class="block px-4 py-2 text-sm text-gray-300 hover:bg-slate-700">Support</a>
+                                    <div class="border-t border-slate-700 my-1"></div>
+                                    <a href="#" id="logout-desktop" class="block px-4 py-2 text-sm text-red-400 hover:bg-slate-700">Logout</a>
+                                </div>
+                            </div>
+                        </div>
+                          <!-- Mobile Menu Button -->
+                        <div class="md:hidden">
+                            <button id="mobile-menu-button" class="p-2 rounded-md text-gray-400 hover:text-white hover:bg-slate-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+              <!-- Mobile Menu -->
+            <div id="mobile-menu" class="md:hidden hidden border-t border-slate-700/50">
+                <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                    <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-slate-700">Dashboard</a>
+                    <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-slate-700">Players</a>
+                    <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-slate-700">Risk Analysis</a>
+                    <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-slate-700">Reports</a>
+                    <a href="#" id="logout-mobile" class="block px-3 py-2 rounded-md text-base font-medium text-red-400 hover:text-white hover:bg-slate-700">Logout</a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Welcome Section -->
+            <section class="mb-8 animate-fade-in-up" style="animation-delay: 100ms;">
+                <h1 class="text-3xl md:text-4xl font-bold text-white" id="welcome-message">Welcome, Coach!</h1>
+                <p class="mt-2 text-lg text-gray-400">Here's a snapshot of your team's readiness and performance.</p>
+            </section>
+
+            <!-- Quick Access Cards -->
+            <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Analyze Players -->
+                <div class="glass-effect p-6 rounded-xl shadow-lg card-hover-effect flex flex-col animate-fade-in-up" style="animation-delay: 200ms;">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-white">Analyze Players</h3>
+                         <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users text-blue-500"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
+                    <p class="text-gray-400 mb-4 flex-grow">Review individual player performance and readiness.</p>
+                    <a href="#" class="w-full text-center btn-gradient text-white font-semibold py-2 px-4 rounded-lg block">View Roster</a>
+                </div>
+
+                <!-- Team Risk -->
+                <div class="glass-effect p-6 rounded-xl shadow-lg card-hover-effect flex flex-col animate-fade-in-up" style="animation-delay: 300ms;">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-white">Team Risk</h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-alert text-red-500"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                    </div>
+                    <p class="text-gray-400 mb-4 flex-grow">Calculate injury risk for the upcoming training session.</p>
+                    <a href="#" class="w-full text-center bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors block">Assess Now</a>
+                </div>
+
+                <!-- Chatbot -->
+                <div class="glass-effect p-6 rounded-xl shadow-lg card-hover-effect flex flex-col animate-fade-in-up" style="animation-delay: 400ms;">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-white">AI Assistant</h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot text-sky-400"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+                    </div>
+                    <p class="text-gray-400 mb-4 flex-grow">Ask questions and get insights from your AI-powered assistant.</p>
+                    <a href="#" class="w-full text-center bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-sky-700 transition-colors block">Open Chat</a>
+                </div>
+
+                <!-- Team Overview -->
+                <div class="glass-effect p-6 rounded-xl shadow-lg card-hover-effect flex flex-col animate-fade-in-up" style="animation-delay: 500ms;">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-white">Team Overview</h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-list text-amber-400"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+                    </div>
+                    <p class="text-gray-400 mb-4 flex-grow">Get a comprehensive look at your team's status.</p>
+                    <a href="#" class="w-full text-center bg-amber-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-amber-600 transition-colors block">View Overview</a>
+                </div>
+            </section>
+
+            <!-- Team Risk Overview Chart -->
+            <section class="glass-effect p-6 rounded-xl shadow-lg animate-fade-in-up" style="animation-delay: 600ms;">
+                <h3 class="text-xl font-semibold text-white mb-4">Team Risk Overview</h3>
+                <div class="h-64 md:h-80">
+                    <div class="flex items-end justify-around h-full space-x-2 md:space-x-4">
+                        <div class="flex flex-col items-center flex-1">
+                            <div class="chart-bar bg-green-500 rounded-t-lg w-full hover:bg-green-400 transition-colors" style="height: 20%; animation-delay: 100ms;"></div>
+                            <span class="text-sm text-gray-400 mt-2">Low</span>
+                        </div>
+                        <div class="flex flex-col items-center flex-1">
+                            <div class="chart-bar bg-yellow-500 rounded-t-lg w-full hover:bg-yellow-400 transition-colors" style="height: 65%; animation-delay: 200ms;"></div>
+                            <span class="text-sm text-gray-400 mt-2">Medium</span>
+                        </div>
+                        <div class="flex flex-col items-center flex-1">
+                            <div class="chart-bar bg-red-500 rounded-t-lg w-full hover:bg-red-400 transition-colors" style="height: 45%; animation-delay: 300ms;"></div>
+                            <span class="text-sm text-gray-400 mt-2">High</span>
+                        </div>
+                        <div class="flex flex-col items-center flex-1">
+                            <div class="chart-bar bg-slate-500 rounded-t-lg w-full hover:bg-slate-400 transition-colors" style="height: 10%; animation-delay: 400ms;"></div>
+                            <span class="text-sm text-gray-400 mt-2">Injured</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-slate-900/50 mt-12 border-t border-slate-700/50">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div class="flex flex-col md:flex-row justify-between items-center text-center md:text-left">
+                    <p class="text-gray-500">&copy; 2024 Prehab. All rights reserved.</p>
+                    <div class="flex space-x-6 mt-4 md:mt-0">
+                        <a href="#" class="text-gray-400 hover:text-blue-400">Settings</a>
+                        <a href="#" class="text-gray-400 hover:text-blue-400">Support</a>
+                        <a href="#" class="text-red-400 hover:text-red-300">Logout</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Modals -->
+    <!-- Profile Modal -->
+    <div id="profile-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-40 flex items-center justify-center p-4">
+        <div class="modal-content glass-effect rounded-xl shadow-lg w-full max-w-2xl max-h-full overflow-y-auto">
+            <div class="flex justify-between items-center p-4 border-b border-slate-700 sticky top-0 bg-slate-800/80 backdrop-blur-sm">
+                <h3 class="text-xl font-semibold text-white">Your Profile</h3>
+                <button id="close-profile-modal" class="text-gray-400 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6">
+                    <img class="h-24 w-24 rounded-full object-cover ring-2 ring-blue-500" src="https://placehold.co/100x100/1E293B/FFFFFF?text=C" alt="Coach profile picture">
+                    <div class="text-center sm:text-left">
+                        <h4 class="text-2xl font-bold text-white" id="profile-modal-name">Alex Johnson</h4>
+                        <p class="text-gray-400" id="profile-modal-email">alex.j@example.com</p>
+                        <p class="text-gray-400" id="profile-modal-club">Head Coach - Varsity Soccer</p>
+                        <button class="mt-2 text-sm text-blue-400 hover:underline">Change Profile Picture</button>
+                    </div>
+                </div>
+                <div class="mt-6 border-t border-slate-700 pt-6">
+                    <h5 class="text-lg font-semibold text-white">Account Details</h5>
+                    <div class="mt-4 space-y-2">
+                        <p><span class="font-medium text-gray-300">Subscription:</span> <span class="text-green-400">Pro Plan</span></p>
+                        <p><span class="font-medium text-gray-300">Member Since:</span> January 2023</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-40 flex items-center justify-center p-4">
+        <div class="modal-content glass-effect rounded-xl shadow-lg w-full max-w-2xl max-h-full overflow-y-auto">
+            <div class="flex justify-between items-center p-4 border-b border-slate-700 sticky top-0 bg-slate-800/80 backdrop-blur-sm">
+                <h3 class="text-xl font-semibold text-white">Settings</h3>
+                <button id="close-settings-modal" class="text-gray-400 hover:text-white transition-colors">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            </div>
+            <div class="p-6 space-y-6">
+                 <div>
+                    <h4 class="text-lg font-semibold text-white">Notifications</h4>
+                    <div class="mt-4 space-y-3 text-gray-300">
+                        <label class="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                            <span>Email Notifications</span>
+                            <input type="checkbox" class="toggle-checkbox sr-only" checked />
+                            <div class="relative w-11 h-6 bg-slate-600 rounded-full cursor-pointer toggle-bg"></div>
+                        </label>
+                         <label class="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                            <span>Push Notifications</span>
+                            <input type="checkbox" class="toggle-checkbox sr-only" />
+                            <div class="relative w-11 h-6 bg-slate-600 rounded-full cursor-pointer toggle-bg"></div>
+                        </label>
+                    </div>
+                </div>
+                <div class="border-t border-slate-700 pt-6">
+                    <h4 class="text-lg font-semibold text-white">Account</h4>
+                    <div class="mt-4 space-y-3">
+                        <button class="w-full text-left p-3 bg-slate-700/50 rounded-lg text-blue-400 hover:bg-slate-700 transition-colors">Change Password</button>
+                        <button class="w-full text-left p-3 bg-red-900/50 rounded-lg text-red-400 hover:bg-red-900/80 transition-colors">Delete Account</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Support Modal -->
+    <div id="support-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-40 flex items-center justify-center p-4">
+        <div class="modal-content glass-effect rounded-xl shadow-lg w-full max-w-2xl max-h-full overflow-y-auto">
+            <div class="flex justify-between items-center p-4 border-b border-slate-700 sticky top-0 bg-slate-800/80 backdrop-blur-sm">
+                <h3 class="text-xl font-semibold text-white">Support</h3>
+                <button id="close-support-modal" class="text-gray-400 hover:text-white transition-colors">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            </div>
+            <div class="p-6 space-y-6">
+                <div>
+                    <h4 class="text-lg font-semibold text-white">Frequently Asked Questions</h4>
+                    <div class="mt-4 space-y-2 text-blue-400">
+                        <a href="#" class="block p-3 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors">How do I upload a team roster?</a>
+                        <a href="#" class="block p-3 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors">What do the risk levels mean?</a>
+                        <a href="#" class="block p-3 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors">How do I contact my account manager?</a>
+                    </div>
+                </div>
+                <div class="border-t border-slate-700 pt-6">
+                    <h4 class="text-lg font-semibold text-white">Contact Us</h4>
+                    <form class="mt-4 space-y-4">
+                        <div>
+                            <label for="support-subject" class="block text-sm font-medium text-gray-300 mb-1">Subject</label>
+                            <input type="text" id="support-subject" class="w-full bg-slate-700 border-slate-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-white p-2">
+                        </div>
+                        <div>
+                            <label for="support-message" class="block text-sm font-medium text-gray-300 mb-1">Message</label>
+                            <textarea id="support-message" rows="4" class="w-full bg-slate-700 border-slate-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-white p-2"></textarea>
+                        </div>
+                        <button type="submit" class="w-full text-center btn-gradient text-white font-semibold py-2 px-4 rounded-lg">Send Message</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+
+        // Supabase Configuration (IMPORTANT: Use your actual project URL and Anon Key)
+        const SUPABASE_URL = 'https://rpydbsieucfjlybopnpi.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJweWRic2lldWNmamx5Ym9wbnBpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3MTY1MzEsImV4cCI6MjA2OTI5MjUzMX0.kqO9v-N9oeLOi7ad8IkBEwSe_e-zjX1c_EvyF7xHNtY';
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // DOM Elements for dynamic content
+        const welcomeMessage = document.getElementById('welcome-message');
+        const profileModalName = document.getElementById('profile-modal-name');
+        const profileModalEmail = document.getElementById('profile-modal-email');
+        const profileModalClub = document.getElementById('profile-modal-club');
+        const profileMenuLogout = document.getElementById('logout-desktop');
+        const mobileMenuLogout = document.getElementById('logout-mobile');
+
+        // Function to handle user logout
+        async function handleLogout() {
+            const { error } = await supabase.auth.signOut();
+            if (error) {
+                console.error('Logout error:', error.message);
+            } else {
+                // Redirect to the main login/landing page (prehab.html)
+                window.location.href = 'prehab.html'; 
+            }
+        }
+
+        // Function to check session and update UI
+        async function checkSessionAndLoadProfile() {
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+            if (sessionError) {
+                console.error('Error getting session:', sessionError.message);
+                window.location.href = 'prehab.html'; // Redirect to login if session fetch fails
+                return;
+            }
+
+            if (session) {
+                // User is authenticated, now fetch their profile from 'coaches' table
+                const { data: coachProfile, error: profileError } = await supabase
+                    .from('coaches')
+                    .select('full_name, club_name, email')
+                    .eq('id', session.user.id)
+                    .single();
+
+                if (profileError) {
+                    console.error('Error fetching coach profile:', profileError.message);
+                    // If profile not found in 'coaches' table, log out and redirect
+                    await supabase.auth.signOut();
+                    window.location.href = 'prehab.html';
+                } else if (coachProfile) {
+                    // Update welcome message and profile modal with actual data
+                    welcomeMessage.textContent = `Welcome, Coach ${coachProfile.full_name.split(' ')[0]}!`; // Use first name
+                    profileModalName.textContent = coachProfile.full_name;
+                    profileModalEmail.textContent = coachProfile.email;
+                    profileModalClub.textContent = coachProfile.club_name;
+
+                    // Attach logout listeners
+                    profileMenuLogout.addEventListener('click', handleLogout);
+                    mobileMenuLogout.addEventListener('click', handleLogout);
+
+                    console.log('User session active and profile loaded.');
+                }
+            } else {
+                // No active session, redirect to login page
+                console.log('No active session found. Redirecting to prehab.html.');
+                window.location.href = 'prehab.html';
+            }
+        }
+
+        // Run session check when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            checkSessionAndLoadProfile();
+            // Initialize Lucide icons after DOM is ready
+            lucide.createIcons();
+        });
+
+        // --- Modal & Menu Toggle Scripts (Existing from your code) ---
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        const profileMenuContainer = document.getElementById('profile-menu-container');
+        const profileMenuButton = document.getElementById('profile-menu-button');
+        const profileMenu = document.getElementById('profile-menu');
+        
+        profileMenuButton.addEventListener('click', (event) => {
+            event.stopPropagation();
+            profileMenu.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!profileMenuContainer.contains(event.target)) {
+                profileMenu.classList.add('hidden');
+            }
+        });
+
+        const modals = {
+            profile: document.getElementById('profile-modal'),
+            settings: document.getElementById('settings-modal'),
+            support: document.getElementById('support-modal')
+        };
+
+        const links = {
+            profile: document.getElementById('profile-link'),
+            settings: document.getElementById('settings-link'),
+            support: document.getElementById('support-link')
+        };
+
+        const closeButtons = {
+            profile: document.getElementById('close-profile-modal'),
+            settings: document.getElementById('close-settings-modal'),
+            support: document.getElementById('close-support-modal')
+        };
+
+        const openModal = (modal) => {
+            if (modal) {
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            }
+            profileMenu.classList.add('hidden');
+        };
+
+        const closeModal = (modal) => {
+            if (modal) {
+                modal.classList.add('hidden');
+                document.body.style.overflow = ''; // Restore background scrolling
+            }
+        };
+
+        for (const key in links) {
+            links[key].addEventListener('click', (e) => {
+                e.preventDefault();
+                openModal(modals[key]);
+            });
+        }
+
+        for (const key in closeButtons) {
+            closeButtons[key].addEventListener('click', () => {
+                closeModal(modals[key]);
+            });
+        }
+        
+        for (const key in modals) {
+            modals[key].addEventListener('click', (e) => {
+                if (e.target === modals[key]) {
+                    closeModal(modals[key]);
+                }
+            });
+        }
+    </script>
+    <style>
+      .toggle-bg:after {
+        content: '';
+        @apply absolute top-0.5 left-0.5 bg-white border border-gray-300 rounded-full h-5 w-5 transition shadow-sm;
+      }
+      .toggle-checkbox:checked + .toggle-bg:after {
+        transform: translateX(100%);
+        @apply border-white;
+      }
+      .toggle-checkbox:checked + .toggle-bg {
+        @apply bg-blue-600;
+      }
+    </style>
+</body>
+</html>
